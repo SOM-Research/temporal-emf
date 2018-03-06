@@ -10,10 +10,18 @@
  *******************************************************************************/
 package io.github.abelgomez.klyo.core;
 
+import java.util.Date;
+
+import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EStructuralFeature;
 
 public interface KlyoEObject extends EObject {
 
 	public abstract String klyoId();
+	
+	EList<EObject> eContents(Date date);
+	
+	Object eGet(Date date, EStructuralFeature feature);
 
 }

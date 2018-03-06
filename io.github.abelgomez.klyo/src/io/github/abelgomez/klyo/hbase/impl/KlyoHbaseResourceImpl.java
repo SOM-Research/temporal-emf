@@ -13,6 +13,7 @@ package io.github.abelgomez.klyo.hbase.impl;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +25,10 @@ import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.NotificationChain;
+import org.eclipse.emf.common.util.AbstractTreeIterator;
+import org.eclipse.emf.common.util.ECollections;
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
@@ -46,6 +50,8 @@ import io.github.abelgomez.klyo.core.exceptions.InvalidOptionsException;
 import io.github.abelgomez.klyo.core.impl.KlyoEObjectAdapterFactoryImpl;
 import io.github.abelgomez.klyo.core.impl.KlyoEObjectImpl;
 import io.github.abelgomez.klyo.estores.SearcheableResourceEStore;
+import io.github.abelgomez.klyo.estores.SearcheableTimedResourceEStore;
+import io.github.abelgomez.klyo.estores.TimedEStore;
 import io.github.abelgomez.klyo.estores.impl.IsSetCachingDelegatedEStoreImpl;
 import io.github.abelgomez.klyo.estores.impl.SizeCachingDelegatedEStoreImpl;
 import io.github.abelgomez.klyo.hbase.estores.impl.DirectWriteHbaseResourceEStoreImpl;
@@ -95,10 +101,10 @@ public class KlyoHbaseResourceImpl extends ResourceImpl implements KlyoResource 
 
 	protected Map<?, ?> options;
 
-	protected SearcheableResourceEStore eStore;
+	protected SearcheableTimedResourceEStore eStore;
 
 	protected Connection connection;
-	
+
 	protected boolean isPersistent = false;
 
 	public KlyoHbaseResourceImpl(URI uri) {
@@ -135,7 +141,8 @@ public class KlyoHbaseResourceImpl extends ResourceImpl implements KlyoResource 
 				Object value = entry.getValue();
 				if (this.options.containsKey(key) && value != null) {
 					if (!value.equals(this.options.get(key))) {
-						throw new IOException(new InvalidOptionsException(MessageFormat.format("key = {0}; value = {1}", key.toString(), value.toString())));
+						throw new IOException(new InvalidOptionsException(
+								MessageFormat.format("key = {0}; value = {1}", key.toString(), value.toString())));
 					}
 				}
 			}
@@ -159,6 +166,24 @@ public class KlyoHbaseResourceImpl extends ResourceImpl implements KlyoResource 
 	@Override
 	public EList<EObject> getContents() {
 		return new ResourceContentsEStoreEList(DUMMY_ROOT_EOBJECT, ROOT_CONTENTS_ESTRUCTURALFEATURE, eStore());
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public EList<EObject> getContents(Date date) {
+		return ECollections.unmodifiableEList((EList<EObject>)(Object)ECollections.asEList(eStore().toArray(date, DUMMY_ROOT_EOBJECT, ROOT_CONTENTS_ESTRUCTURALFEATURE)));
+	}
+
+	public TreeIterator<EObject> getAllContents(final Date date) {
+		return new AbstractTreeIterator<EObject>(this, false) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Iterator<EObject> getChildren(Object object) {
+				return object == KlyoHbaseResourceImpl.this ? KlyoHbaseResourceImpl.this.getContents(date).iterator()
+						: ((KlyoEObject) object).eContents(date).iterator();
+			}
+		};
 	}
 
 	@Override
@@ -213,20 +238,20 @@ public class KlyoHbaseResourceImpl extends ResourceImpl implements KlyoResource 
 	}
 
 	@Override
-	public InternalEObject.EStore eStore() {
+	public TimedEStore eStore() {
 		return eStore;
 	}
 
 	/**
-	 * Creates the {@link SearcheableResourceEStore} used by this
-	 * {@link Resource}.
+	 * Creates the {@link SearcheableResourceEStore} used by this {@link Resource}.
 	 * 
 	 * @param graph
 	 * @return
-	 * @throws IOException 
+	 * @throws IOException
 	 */
-	protected SearcheableResourceEStore createResourceEStore(Connection connection) throws IOException {
-		return new IsSetCachingDelegatedEStoreImpl(new SizeCachingDelegatedEStoreImpl(new DirectWriteHbaseResourceEStoreImpl(this, connection)));
+	protected SearcheableTimedResourceEStore createResourceEStore(Connection connection) throws IOException {
+		return new IsSetCachingDelegatedEStoreImpl(
+				new SizeCachingDelegatedEStoreImpl(new DirectWriteHbaseResourceEStoreImpl(this, connection)));
 	}
 
 	/**
@@ -239,7 +264,8 @@ public class KlyoHbaseResourceImpl extends ResourceImpl implements KlyoResource 
 	protected class ResourceContentsEStoreEList extends EStoreEObjectImpl.EStoreEList<EObject> {
 		protected static final long serialVersionUID = 1L;
 
-		protected ResourceContentsEStoreEList(InternalEObject owner, EStructuralFeature eStructuralFeature, EStore store) {
+		protected ResourceContentsEStoreEList(InternalEObject owner, EStructuralFeature eStructuralFeature,
+				EStore store) {
 			super(owner, eStructuralFeature, store);
 		}
 
@@ -297,7 +323,7 @@ public class KlyoHbaseResourceImpl extends ResourceImpl implements KlyoResource 
 			}
 			return eObject.eSetResource(null, notifications);
 		}
-		
+
 		@Override
 		protected void delegateAdd(int index, EObject object) {
 			// FIXME? Maintain a list of hard links to the elements while moving
@@ -306,20 +332,23 @@ public class KlyoHbaseResourceImpl extends ResourceImpl implements KlyoResource 
 			// referenced from a saved object may be garbage collected before
 			// they have been completely stored in the DB
 			List<EObject> hardLinksList = new ArrayList<>();
-			
+
 			// Collect all contents
 			hardLinksList.add(object);
-			for (Iterator<EObject> it = object.eAllContents(); it.hasNext(); hardLinksList.add(it.next()));
+			for (Iterator<EObject> it = object.eAllContents(); it.hasNext(); hardLinksList.add(it.next()))
+				;
 
-			// The delegate add has to be processed before adding the child elements to the resource
+			// The delegate add has to be processed before adding the child elements to the
+			// resource
 			// so that the root element is created
 			super.delegateAdd(index, object);
-			
+
 			// Iterate using the hard links list instead the getAllContents
 			// We ensure that using the hardLinksList it is not taken out by JIT
 			// compiler
 			for (EObject element : hardLinksList) {
-				KlyoInternalEObject internalElement = KlyoEObjectAdapterFactoryImpl.getAdapter(element, KlyoInternalEObject.class);
+				KlyoInternalEObject internalElement = KlyoEObjectAdapterFactoryImpl.getAdapter(element,
+						KlyoInternalEObject.class);
 				internalElement.klyoSetResource(KlyoHbaseResourceImpl.this);
 			}
 		}
@@ -331,17 +360,19 @@ public class KlyoHbaseResourceImpl extends ResourceImpl implements KlyoResource 
 			KlyoInternalEObject eObject = KlyoEObjectAdapterFactoryImpl.getAdapter(object, KlyoInternalEObject.class);
 			// Collect all contents
 			hardLinksList.add(object);
-			for (Iterator<EObject> it = eObject.eAllContents(); it.hasNext(); hardLinksList.add(it.next()));
+			for (Iterator<EObject> it = eObject.eAllContents(); it.hasNext(); hardLinksList.add(it.next()))
+				;
 			// Iterate using the hard links list instead the getAllContents
 			// We ensure that using the hardLinksList it is not taken out by JIT
 			// compiler
 			for (EObject element : hardLinksList) {
-				KlyoInternalEObject internalElement = KlyoEObjectAdapterFactoryImpl.getAdapter(element, KlyoInternalEObject.class);
+				KlyoInternalEObject internalElement = KlyoEObjectAdapterFactoryImpl.getAdapter(element,
+						KlyoInternalEObject.class);
 				internalElement.klyoSetResource(null);
 			}
-			return object;			
+			return object;
 		}
-		
+
 		@Override
 		protected void didAdd(int index, EObject object) {
 			super.didAdd(index, object);

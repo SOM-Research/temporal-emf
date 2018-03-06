@@ -12,6 +12,7 @@ package io.github.abelgomez.klyo.estores.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,8 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.InternalEObject.EStore;
 
+import io.github.abelgomez.klyo.estores.TimedEStore;
+
 /**
  * A simple {@link EStore} implementation that uses synchronized collections to
  * store the data in memory.
@@ -29,7 +32,7 @@ import org.eclipse.emf.ecore.InternalEObject.EStore;
  * @author agomez
  * 
  */
-public class TransientEStoreImpl implements InternalEObject.EStore {
+public class TransientEStoreImpl implements TimedEStore {
 
 	protected Map<EStoreEntryKey, Object> singleMap = new HashMap<EStoreEntryKey, Object>();
 	protected Map<EStoreEntryKey, List<Object>> manyMap = new HashMap<EStoreEntryKey, List<Object>>();
@@ -107,6 +110,11 @@ public class TransientEStoreImpl implements InternalEObject.EStore {
 	}
 
 	@Override
+	public Object get(Date date, InternalEObject object, EStructuralFeature feature, int index) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public Object set(InternalEObject eObject, EStructuralFeature feature, int index, Object value) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
 		if (index == NO_INDEX) {
@@ -164,6 +172,11 @@ public class TransientEStoreImpl implements InternalEObject.EStore {
 	}
 
 	@Override
+	public boolean isSet(Date date, InternalEObject object, EStructuralFeature feature) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public void unset(InternalEObject eObject, EStructuralFeature feature) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
 		if (!feature.isMany()) {
@@ -181,10 +194,20 @@ public class TransientEStoreImpl implements InternalEObject.EStore {
 	}
 
 	@Override
+	public int size(Date date, InternalEObject object, EStructuralFeature feature) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public int indexOf(InternalEObject eObject, EStructuralFeature feature, Object value) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
 		List<Object> list = manyMap.get(entry);
 		return list != null ? list.indexOf(value) : -1;
+	}
+
+	@Override
+	public int indexOf(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -195,10 +218,20 @@ public class TransientEStoreImpl implements InternalEObject.EStore {
 	}
 
 	@Override
+	public int lastIndexOf(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public Object[] toArray(InternalEObject eObject, EStructuralFeature feature) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
 		List<Object> list = manyMap.get(entry);
 		return list != null ? list.toArray() : new Object[] {};
+	}
+
+	@Override
+	public Object[] toArray(Date date, InternalEObject object, EStructuralFeature feature) {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -209,9 +242,19 @@ public class TransientEStoreImpl implements InternalEObject.EStore {
 	}
 
 	@Override
+	public <T> T[] toArray(Date date, InternalEObject object, EStructuralFeature feature, T[] array) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public boolean isEmpty(InternalEObject eObject, EStructuralFeature feature) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
 		return manyMap.get(entry).isEmpty();
+	}
+
+	@Override
+	public boolean isEmpty(Date date, InternalEObject object, EStructuralFeature feature) {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -222,19 +265,39 @@ public class TransientEStoreImpl implements InternalEObject.EStore {
 	}
 
 	@Override
+	public boolean contains(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public int hashCode(InternalEObject eObject, EStructuralFeature feature) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
 		return manyMap.get(entry).hashCode();
 	}
 
 	@Override
+	public int hashCode(Date date, InternalEObject object, EStructuralFeature feature) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public InternalEObject getContainer(InternalEObject eObject) {
-		return null;
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public InternalEObject getContainer(Date date, InternalEObject object) {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public EStructuralFeature getContainingFeature(InternalEObject eObject) {
 		// This should never be called.
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public EStructuralFeature getContainingFeature(Date date, InternalEObject object) {
 		throw new UnsupportedOperationException();
 	}
 

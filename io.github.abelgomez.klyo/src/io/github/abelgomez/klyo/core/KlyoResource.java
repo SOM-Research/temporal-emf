@@ -10,15 +10,21 @@
  *******************************************************************************/
 package io.github.abelgomez.klyo.core;
 
-import org.eclipse.emf.ecore.InternalEObject;
+import java.util.Date;
+
+import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.common.util.TreeIterator;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
+
+import io.github.abelgomez.klyo.estores.TimedEStore;
 
 public interface KlyoResource extends Resource, Resource.Internal {
 
-	public final static String OPTIONS_GRAPH_TYPE = "blueprints.graph";
-	public final static String OPTIONS_GRAPH_TYPE_DEFAULT = "com.tinkerpop.blueprints.impls.tg.TinkerGraph";
-
+	public abstract TimedEStore eStore();
 	
-	public abstract InternalEObject.EStore eStore();
+	public abstract EList<EObject> getContents(Date date);
+	
+	public abstract TreeIterator<EObject> getAllContents(Date date);
 	
 }

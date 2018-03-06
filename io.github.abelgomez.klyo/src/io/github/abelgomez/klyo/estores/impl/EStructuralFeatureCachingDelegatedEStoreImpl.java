@@ -18,6 +18,7 @@ import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.InternalEObject.EStore;
 
 import io.github.abelgomez.klyo.estores.SearcheableResourceEStore;
+import io.github.abelgomez.klyo.estores.SearcheableTimedResourceEStore;
 
 /**
  * A {@link SearcheableResourceEStore} wrapper that caches {@link EStructuralFeature}s
@@ -25,7 +26,7 @@ import io.github.abelgomez.klyo.estores.SearcheableResourceEStore;
  * @author agomez
  * 
  */
-public class EStructuralFeatureCachingDelegatedEStoreImpl extends DelegatedResourceEStoreImpl implements SearcheableResourceEStore {
+public class EStructuralFeatureCachingDelegatedEStoreImpl extends DelegatedResourceEStoreImpl implements SearcheableTimedResourceEStore {
 
 	protected class MapKey {
 		protected InternalEObject object;
