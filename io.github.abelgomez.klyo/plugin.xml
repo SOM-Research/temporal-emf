@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.emf.ecore.protocol_parser">
+      <parser
+            class="io.github.abelgomez.klyo.core.impl.KlyoResourceFactoryImpl"
+            protocolName="klyo-hbase">
+      </parser>
+   </extension>
+
+</plugin>
