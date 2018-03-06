@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.emf.importer.modelImporterDescriptors">
+      <modelImporterDescriptor
+            description="Create the Ecore model based on other Ecore or EMOF models"
+            extensions="ecore,emof"
+            icon="icons/full/obj16/KlyoModelFile.gif"
+            id="io.github.abelgomez.klyo.ui.modelImporterDescriptor"
+            name="Ecore model (Klyo Native)"
+            wizard="io.github.abelgomez.klyo.ui.wizards.KlyoModelImporterWizard">
+      </modelImporterDescriptor>
+   </extension>
+</plugin>
