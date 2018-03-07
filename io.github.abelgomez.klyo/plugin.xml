@@ -8,5 +8,4 @@
             protocolName="klyo-hbase">
       </parser>
    </extension>
-
 </plugin>
