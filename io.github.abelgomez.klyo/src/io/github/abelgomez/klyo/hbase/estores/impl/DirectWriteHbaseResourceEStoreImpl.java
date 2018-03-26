@@ -32,7 +32,6 @@ import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Table;
-import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
@@ -185,16 +184,22 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 	protected Object set(KlyoEObject object, EReference eReference, int index, KlyoInternalEObject referencedObject) {
 		Object oldValue = isSet((InternalEObject) object, eReference) ? get(null, object, eReference, index) : null;
 
-		updateLoadedEObjects(referencedObject);
-		updateContainment(object, eReference, referencedObject);
-		updateInstanceOf(referencedObject);
+		if (referencedObject != null) {
+			updateLoadedEObjects(referencedObject);
+			updateContainment(object, eReference, referencedObject);
+			updateInstanceOf(referencedObject);
+		}
 
 		try {
 			if (!eReference.isMany()) {
-				Put put = new Put(Bytes.toBytes(object.klyoId()));
-				put.addColumn(PROPERTY_FAMILY, Bytes.toBytes(eReference.getName()),
-						Bytes.toBytes(referencedObject.klyoId()));
-				table.put(put);
+				if (referencedObject != null) {
+					Put put = new Put(Bytes.toBytes(object.klyoId()));
+					put.addColumn(PROPERTY_FAMILY, Bytes.toBytes(eReference.getName()),
+							Bytes.toBytes(referencedObject.klyoId()));
+					table.put(put);
+				} else {
+					unset((InternalEObject) object, eReference);
+				}
 			} else {
 				String[] array = (String[]) getFromTable(object, eReference);
 				array[index] = referencedObject.klyoId();
@@ -598,10 +603,7 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 				Put put = new Put(Bytes.toBytes(referencedObject.klyoId()));
 				put.addColumn(CONTAINMENT_FAMILY, CONTAINER_QUALIFIER, Bytes.toBytes(object.klyoId()));
 				put.addColumn(CONTAINMENT_FAMILY, CONTAINING_FEATURE_QUALIFIER, Bytes.toBytes(eReference.getName()));
-				table.checkAndPut(Bytes.toBytes(referencedObject.klyoId()), CONTAINMENT_FAMILY, CONTAINER_QUALIFIER,
-						CompareOp.NOT_EQUAL, Bytes.toBytes(object.klyoId()), put);
-				// table.put(put);
-
+				table.put(put);
 			} catch (IOException e) {
 				Logger.log(Logger.SEVERITY_ERROR,
 						MessageFormat.format("Unable to update containment information for {0}", object));
@@ -615,7 +617,6 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 			put.addColumn(TYPE_FAMILY, METAMODEL_QUALIFIER, Bytes.toBytes(object.eClass().getEPackage().getNsURI()));
 			put.addColumn(TYPE_FAMILY, ECLASS_QUALIFIER, Bytes.toBytes(object.eClass().getName()));
 			table.checkAndPut(Bytes.toBytes(object.klyoId()), TYPE_FAMILY, ECLASS_QUALIFIER, null, put);
-
 		} catch (IOException e) {
 			Logger.log(Logger.SEVERITY_ERROR,
 					MessageFormat.format("Unable to update containment information for {0}", object));
