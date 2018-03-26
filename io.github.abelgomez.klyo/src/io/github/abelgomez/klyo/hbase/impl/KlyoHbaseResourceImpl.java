@@ -52,8 +52,6 @@ import io.github.abelgomez.klyo.core.impl.KlyoEObjectImpl;
 import io.github.abelgomez.klyo.estores.SearcheableResourceEStore;
 import io.github.abelgomez.klyo.estores.SearcheableTimedResourceEStore;
 import io.github.abelgomez.klyo.estores.TimedEStore;
-import io.github.abelgomez.klyo.estores.impl.IsSetCachingDelegatedEStoreImpl;
-import io.github.abelgomez.klyo.estores.impl.SizeCachingDelegatedEStoreImpl;
 import io.github.abelgomez.klyo.hbase.estores.impl.DirectWriteHbaseResourceEStoreImpl;
 
 public class KlyoHbaseResourceImpl extends ResourceImpl implements KlyoResource {
@@ -250,8 +248,7 @@ public class KlyoHbaseResourceImpl extends ResourceImpl implements KlyoResource 
 	 * @throws IOException
 	 */
 	protected SearcheableTimedResourceEStore createResourceEStore(Connection connection) throws IOException {
-		return new IsSetCachingDelegatedEStoreImpl(
-				new SizeCachingDelegatedEStoreImpl(new DirectWriteHbaseResourceEStoreImpl(this, connection)));
+		return new DirectWriteHbaseResourceEStoreImpl(this, connection);
 	}
 
 	/**
