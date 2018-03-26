@@ -135,7 +135,7 @@ public class KlyoEObjectImpl extends MinimalEStoreEObjectImpl implements KlyoInt
 		if (resource instanceof KlyoResource) {
 			eStore = ((KlyoResource) resource).eStore();
 		} else {
-			throw new IllegalArgumentException("Invalid Resource Type");
+			eStore = new OwnedTransientEStoreImpl(this);
 		}
 		// Move contents from oldStore to eStore
 		if (oldStore != null && eStore != null && eStore != oldStore) {
