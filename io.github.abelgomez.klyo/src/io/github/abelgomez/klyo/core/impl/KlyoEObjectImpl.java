@@ -11,7 +11,11 @@
 package io.github.abelgomez.klyo.core.impl;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.eclipse.emf.common.util.ECollections;
 import org.eclipse.emf.common.util.EList;
@@ -179,7 +183,7 @@ public class KlyoEObjectImpl extends MinimalEStoreEObjectImpl implements KlyoInt
 		EList<EObject> contents = ECollections.newBasicEList();
 		if (eStructuralFeatures != null) {
 			for (EStructuralFeature feature : eStructuralFeatures) {
-				contents.addAll((Collection<? extends EObject>) eGet(date, feature));
+				contents.addAll((Collection<? extends EObject>) eGetAt(date, feature));
 			}
 		}
 		return ECollections.unmodifiableEList(contents);
@@ -201,30 +205,48 @@ public class KlyoEObjectImpl extends MinimalEStoreEObjectImpl implements KlyoInt
 	}
 
 	@Override
-	public Object eGet(Date date, EStructuralFeature feature) {
-		return dynamicGet(date, eDynamicFeatureID(feature));
+	public Object eGetAt(Date date, EStructuralFeature feature) {
+		return dynamicGetAt(date, eDynamicFeatureID(feature));
+	}
+	
+	
+	@Override
+	public SortedMap<Date, Object> eGetAllBetween(Date startDate, Date endDate, EStructuralFeature feature) {
+		return dynamicGetAllBetween(startDate, endDate, eDynamicFeatureID(feature));
 	}
 	
 	@Override
 	public Object dynamicGet(int dynamicFeatureID) {
-		return dynamicGet(null, dynamicFeatureID);
+		EStructuralFeature feature = eDynamicFeature(dynamicFeatureID);
+		if (feature.isMany()) {
+			return new EStoreEObjectImpl.BasicEStoreEList<Object>(this, feature);
+		} else {
+			return eStore().get(this, feature, EStore.NO_INDEX);
+		}
 	}
 
-	public Object dynamicGet(Date date, int dynamicFeatureID) {
+	public Object dynamicGetAt(Date date, int dynamicFeatureID) {
 		EStructuralFeature feature = eDynamicFeature(dynamicFeatureID);
-		if (date == null) {
-			if (feature.isMany()) {
-				return new EStoreEObjectImpl.BasicEStoreEList<Object>(this, feature);
-			} else {
-				return eStore().get(this, feature, EStore.NO_INDEX);
+		if (feature.isMany()) {
+			return ECollections.unmodifiableEList(ECollections.asEList(eStore().toArrayAt(date, this, feature)));
+		} else {
+			return eStore().getAt(date, this, feature, EStore.NO_INDEX);
+		}
+	}
+	
+	public SortedMap<Date, Object> dynamicGetAllBetween(Date startDate, Date endDate, int dynamicFeatureID) {
+		EStructuralFeature feature = eDynamicFeature(dynamicFeatureID);
+		SortedMap<Date, Object> result = new TreeMap<>();
+		if (feature.isMany()) {
+			SortedMap<Date, Object[]> all = eStore().toArrayAllBetween(startDate, endDate, this, feature);
+			for (Entry<Date, Object[]> entry : all.entrySet()) {
+				result.put(entry.getKey(), ECollections.unmodifiableEList(ECollections.asEList(entry.getValue())));
 			}
 		} else {
-			if (feature.isMany()) {
-				return ECollections.unmodifiableEList(ECollections.asEList(eStore().toArray(this, feature)));
-			} else {
-				return eStore().get(date, this, feature, EStore.NO_INDEX);
-			}
+			SortedMap<Date, Object> all = eStore().getAllBetween(startDate, endDate, this, feature, EStore.NO_INDEX);
+			result.putAll(all);
 		}
+		return Collections.unmodifiableSortedMap(result);
 	}
 
 	@Override

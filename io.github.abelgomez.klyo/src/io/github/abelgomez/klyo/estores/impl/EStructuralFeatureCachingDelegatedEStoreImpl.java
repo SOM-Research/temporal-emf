@@ -86,11 +86,11 @@ public class EStructuralFeatureCachingDelegatedEStoreImpl extends DelegatedResou
 	
 	protected Map<MapKey, Object> cache;
 	
-	public EStructuralFeatureCachingDelegatedEStoreImpl(SearcheableResourceEStore eStore) {
+	public EStructuralFeatureCachingDelegatedEStoreImpl(SearcheableTimedResourceEStore eStore) {
 		this(eStore, DEFAULT_CACHE_SIZE);
 	}
 
-	public EStructuralFeatureCachingDelegatedEStoreImpl(SearcheableResourceEStore eStore, int cacheSize) {
+	public EStructuralFeatureCachingDelegatedEStoreImpl(SearcheableTimedResourceEStore eStore, int cacheSize) {
 		super(eStore);
 		this.cache = new LRUMap<>(cacheSize);
 	}

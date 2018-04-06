@@ -11,6 +11,7 @@
 package io.github.abelgomez.klyo.core;
 
 import java.util.Date;
+import java.util.SortedMap;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
@@ -22,6 +23,8 @@ public interface KlyoEObject extends EObject {
 	
 	EList<EObject> eContents(Date date);
 	
-	Object eGet(Date date, EStructuralFeature feature);
+	Object eGetAt(Date date, EStructuralFeature feature);
+
+	SortedMap<Date, Object> eGetAllBetween(Date startDate, Date endDate, EStructuralFeature feature);
 
 }

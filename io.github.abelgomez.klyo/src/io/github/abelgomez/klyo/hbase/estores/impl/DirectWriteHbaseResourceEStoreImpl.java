@@ -18,16 +18,20 @@ import java.io.ObjectOutputStream;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.KeepDeletedCells;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
@@ -52,23 +56,22 @@ import io.github.abelgomez.klyo.estores.SearcheableTimedResourceEStore;
 
 public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResourceEStore {
 
-	// protected static final byte[] PROPERTY_FAMILY = Bytes.toBytes("p");
-	// protected static final byte[] TYPE_FAMILY = Bytes.toBytes("t");
-	// protected static final byte[] METAMODEL_QUALIFIER = Bytes.toBytes("m");
-	// protected static final byte[] ECLASS_QUALIFIER = Bytes.toBytes("e");
-	// protected static final byte[] CONTAINMENT_FAMILY = Bytes.toBytes("c");
-	// protected static final byte[] CONTAINER_QUALIFIER = Bytes.toBytes("n");
-	// protected static final byte[] CONTAINING_FEATURE_QUALIFIER =
-	// Bytes.toBytes("g");
+	protected static final byte[] PROPERTY_FAMILY = Bytes.toBytes("p");
+	protected static final byte[] TYPE_FAMILY = Bytes.toBytes("t");
+	protected static final byte[] METAMODEL_QUALIFIER = Bytes.toBytes("m");
+	protected static final byte[] ECLASS_QUALIFIER = Bytes.toBytes("e");
+	protected static final byte[] CONTAINMENT_FAMILY = Bytes.toBytes("c");
+	protected static final byte[] CONTAINER_QUALIFIER = Bytes.toBytes("n");
+	protected static final byte[] CONTAINING_FEATURE_QUALIFIER = Bytes.toBytes("g");
 
 	// // TODO: Change in final version by short version to save space
-	protected static final byte[] PROPERTY_FAMILY = Bytes.toBytes("property");
-	protected static final byte[] TYPE_FAMILY = Bytes.toBytes("type");
-	protected static final byte[] METAMODEL_QUALIFIER = Bytes.toBytes("metamodel");
-	protected static final byte[] ECLASS_QUALIFIER = Bytes.toBytes("eclass");
-	protected static final byte[] CONTAINMENT_FAMILY = Bytes.toBytes("containment");
-	protected static final byte[] CONTAINER_QUALIFIER = Bytes.toBytes("container");
-	protected static final byte[] CONTAINING_FEATURE_QUALIFIER = Bytes.toBytes("containingFeature");
+//	protected static final byte[] PROPERTY_FAMILY = Bytes.toBytes("property");
+//	protected static final byte[] TYPE_FAMILY = Bytes.toBytes("type");
+//	protected static final byte[] METAMODEL_QUALIFIER = Bytes.toBytes("metamodel");
+//	protected static final byte[] ECLASS_QUALIFIER = Bytes.toBytes("eclass");
+//	protected static final byte[] CONTAINMENT_FAMILY = Bytes.toBytes("containment");
+//	protected static final byte[] CONTAINER_QUALIFIER = Bytes.toBytes("container");
+//	protected static final byte[] CONTAINING_FEATURE_QUALIFIER = Bytes.toBytes("containingFeature");
 
 	@SuppressWarnings("unchecked")
 	protected Map<Object, KlyoInternalEObject> loadedEObjects = new SoftValueHashMap();
@@ -90,10 +93,12 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 			HColumnDescriptor typeFamily = new HColumnDescriptor(TYPE_FAMILY);
 			HColumnDescriptor containmentFamily = new HColumnDescriptor(CONTAINMENT_FAMILY);
 			containmentFamily.setMaxVersions(Integer.MAX_VALUE);
-			containmentFamily.setKeepDeletedCells(KeepDeletedCells.TTL);
+			containmentFamily.setMinVersions(Integer.MAX_VALUE);
+			containmentFamily.setKeepDeletedCells(KeepDeletedCells.TRUE);
 			HColumnDescriptor propertyFamily = new HColumnDescriptor(PROPERTY_FAMILY);
 			propertyFamily.setMaxVersions(Integer.MAX_VALUE);
-			propertyFamily.setKeepDeletedCells(KeepDeletedCells.TTL);
+			propertyFamily.setMinVersions(Integer.MAX_VALUE);
+			propertyFamily.setKeepDeletedCells(KeepDeletedCells.TRUE);
 			desc.addFamily(typeFamily);
 			desc.addFamily(containmentFamily);
 			desc.addFamily(propertyFamily);
@@ -110,23 +115,23 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 
 	@Override
 	public Object get(InternalEObject object, EStructuralFeature feature, int index) {
-		return get(null, object, feature, index);
+		return getAt(null, object, feature, index);
 	}
 
 	@Override
-	public Object get(Date date, InternalEObject object, EStructuralFeature feature, int index) {
+	public Object getAt(Date date, InternalEObject object, EStructuralFeature feature, int index) {
 		KlyoEObject klyoEObject = KlyoEObjectAdapterFactoryImpl.getAdapter(object, KlyoEObject.class);
 		if (feature instanceof EAttribute) {
-			return get(date, klyoEObject, (EAttribute) feature, index);
+			return getAt(date, klyoEObject, (EAttribute) feature, index);
 		} else if (feature instanceof EReference) {
-			return get(date, klyoEObject, (EReference) feature, index);
+			return getAt(date, klyoEObject, (EReference) feature, index);
 		} else {
 			throw new IllegalArgumentException(feature.toString());
 		}
 	}
 
-	protected Object get(Date date, KlyoEObject object, EAttribute eAttribute, int index) {
-		Object value = getFromTable(date, object, eAttribute);
+	protected Object getAt(Date date, KlyoEObject object, EAttribute eAttribute, int index) {
+		Object value = getFromTable(null, date, object, eAttribute);
 		if (!eAttribute.isMany()) {
 			return parseValue(eAttribute, (String) value);
 		} else {
@@ -135,14 +140,52 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 		}
 	}
 
-	protected Object get(Date date, KlyoEObject object, EReference eReference, int index) {
-		Object value = getFromTable(date, object, eReference);
+	protected Object getAt(Date date, KlyoEObject object, EReference eReference, int index) {
+		Object value = getFromTable(null, date, object, eReference);
 		if (!eReference.isMany()) {
 			return getEObject((String) value);
 		} else {
 			String[] array = (String[]) value;
 			return getEObject(array[index]);
 		}
+	}
+
+	@Override
+	public SortedMap<Date, Object> getAllBetween(Date startDate, Date endDate, InternalEObject object, EStructuralFeature feature, int index) {
+		KlyoEObject klyoEObject = KlyoEObjectAdapterFactoryImpl.getAdapter(object, KlyoEObject.class);
+		if (feature instanceof EAttribute) {
+			return getAllBetween(startDate, endDate, klyoEObject, (EAttribute) feature, index);
+		} else if (feature instanceof EReference) {
+			return getAllBetween(startDate, endDate, klyoEObject, (EReference) feature, index);
+		} else {
+			throw new IllegalArgumentException(feature.toString());
+		}
+	}
+	
+	protected SortedMap<Date, Object> getAllBetween(Date startDate, Date endDate, KlyoEObject object, EAttribute eAttribute, int index) {
+		SortedMap<Date, Object> result = new TreeMap<>();
+		SortedMap<Long, Object> all = getAllFromTable(startDate, endDate, object, eAttribute);
+		for (Entry<Long, Object> entry : all.entrySet()) {
+			if (!eAttribute.isMany()) {
+				result.put(new Date(entry.getKey()), parseValue(eAttribute, (String) entry.getValue()));
+			} else {
+				result.put(new Date(entry.getKey()), parseValue(eAttribute, ((String[]) entry.getValue())[index]));
+			}
+		}
+		return result;
+	}
+	
+	protected SortedMap<Date, Object> getAllBetween(Date startDate, Date endDate, KlyoEObject object, EReference eReference, int index) {
+		SortedMap<Date, Object> result = new TreeMap<>();
+		SortedMap<Long, Object> all = getAllFromTable(startDate, endDate, object, eReference);
+		for (Entry<Long, Object> entry : all.entrySet()) {
+			if (!eReference.isMany()) {
+				result.put(new Date(entry.getKey()), getEObject((String) entry.getValue()));
+			} else {
+				result.put(new Date(entry.getKey()), getEObject(((String[]) entry.getValue())[index]));
+			}
+		}
+		return result;
 	}
 
 	@Override
@@ -160,20 +203,18 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 	}
 
 	protected Object set(KlyoEObject object, EAttribute eAttribute, int index, Object value) {
-		Object oldValue = isSet((InternalEObject) object, eAttribute) ? get(null, object, eAttribute, index) : null;
+		Put put = new Put(Bytes.toBytes(object.klyoId()));
+		Object oldValue = isSet((InternalEObject) object, eAttribute) ? getAt(null, object, eAttribute, index) : null;
 		try {
 			if (!eAttribute.isMany()) {
-				Put put = new Put(Bytes.toBytes(object.klyoId()));
 				put.addColumn(PROPERTY_FAMILY, Bytes.toBytes(eAttribute.getName()),
 						Bytes.toBytes(serializeValue(eAttribute, value)));
-				table.put(put);
 			} else {
 				String[] array = (String[]) getFromTable(object, eAttribute);
 				array[index] = serializeValue(eAttribute, value);
-				Put put = new Put(Bytes.toBytes(object.klyoId()));
 				put.addColumn(PROPERTY_FAMILY, Bytes.toBytes(eAttribute.getName()), toBytes(array));
-				table.put(put);
 			}
+			table.put(put);
 		} catch (IOException e) {
 			Logger.log(Logger.SEVERITY_ERROR,
 					MessageFormat.format("Unable to set information for element ''{0}''", object));
@@ -182,7 +223,8 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 	}
 
 	protected Object set(KlyoEObject object, EReference eReference, int index, KlyoInternalEObject referencedObject) {
-		Object oldValue = isSet((InternalEObject) object, eReference) ? get(null, object, eReference, index) : null;
+		Put put = new Put(Bytes.toBytes(object.klyoId()));
+		Object oldValue = isSet((InternalEObject) object, eReference) ? getAt(null, object, eReference, index) : null;
 
 		if (referencedObject != null) {
 			updateLoadedEObjects(referencedObject);
@@ -193,7 +235,6 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 		try {
 			if (!eReference.isMany()) {
 				if (referencedObject != null) {
-					Put put = new Put(Bytes.toBytes(object.klyoId()));
 					put.addColumn(PROPERTY_FAMILY, Bytes.toBytes(eReference.getName()),
 							Bytes.toBytes(referencedObject.klyoId()));
 					table.put(put);
@@ -203,7 +244,6 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 			} else {
 				String[] array = (String[]) getFromTable(object, eReference);
 				array[index] = referencedObject.klyoId();
-				Put put = new Put(Bytes.toBytes(object.klyoId()));
 				put.addColumn(PROPERTY_FAMILY, Bytes.toBytes(eReference.getName()), toBytes(array));
 				table.put(put);
 			}
@@ -216,11 +256,11 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 
 	@Override
 	public boolean isSet(InternalEObject object, EStructuralFeature feature) {
-		return isSet(null, object, feature);
+		return isSetAt(null, object, feature);
 	}
 
 	@Override
-	public boolean isSet(Date date, InternalEObject object, EStructuralFeature feature) {
+	public boolean isSetAt(Date date, InternalEObject object, EStructuralFeature feature) {
 		KlyoEObject klyoEObject = KlyoEObjectAdapterFactoryImpl.getAdapter(object, KlyoEObject.class);
 		try {
 			Get get = new Get(Bytes.toBytes(klyoEObject.klyoId()));
@@ -253,12 +293,12 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 
 	protected void add(KlyoEObject object, EAttribute eAttribute, int index, Object value) {
 		try {
+			Put put = new Put(Bytes.toBytes(object.klyoId()));
 			String[] array = (String[]) getFromTable(object, eAttribute);
 			if (array == null) {
 				array = new String[] {};
 			}
 			array = (String[]) ArrayUtils.add(array, index, serializeValue(eAttribute, value));
-			Put put = new Put(Bytes.toBytes(object.klyoId()));
 			put.addColumn(PROPERTY_FAMILY, Bytes.toBytes(eAttribute.getName()), toBytes(array));
 			table.put(put);
 		} catch (IOException e) {
@@ -269,6 +309,7 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 
 	protected void add(KlyoEObject object, EReference eReference, int index, KlyoInternalEObject referencedObject) {
 		try {
+			Put put = new Put(Bytes.toBytes(object.klyoId()));
 			updateLoadedEObjects(referencedObject);
 			updateContainment(object, eReference, referencedObject);
 			updateInstanceOf(referencedObject);
@@ -277,7 +318,6 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 				array = new String[] {};
 			}
 			array = (String[]) ArrayUtils.add(array, index, referencedObject.klyoId());
-			Put put = new Put(Bytes.toBytes(object.klyoId()));
 			put.addColumn(PROPERTY_FAMILY, Bytes.toBytes(eReference.getName()), toBytes(array));
 			table.put(put);
 		} catch (IOException e) {
@@ -301,11 +341,11 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 	}
 
 	protected Object remove(KlyoEObject object, EAttribute eAttribute, int index) {
-		Object oldValue = get(null, object, eAttribute, index);
+		Put put = new Put(Bytes.toBytes(object.klyoId()));
+		Object oldValue = getAt(null, object, eAttribute, index);
 		try {
 			String[] array = (String[]) getFromTable(object, eAttribute);
 			array = (String[]) ArrayUtils.remove(array, index);
-			Put put = new Put(Bytes.toBytes(object.klyoId()));
 			put.addColumn(PROPERTY_FAMILY, Bytes.toBytes(eAttribute.getName()), toBytes(array));
 			table.put(put);
 		} catch (IOException e) {
@@ -316,12 +356,11 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 	}
 
 	protected Object remove(KlyoEObject object, EReference eReference, int index) {
-
-		Object oldValue = get(null, object, eReference, index);
+		Put put = new Put(Bytes.toBytes(object.klyoId()));
+		Object oldValue = getAt(null, object, eReference, index);
 		try {
 			String[] array = (String[]) getFromTable(object, eReference);
 			array = (String[]) ArrayUtils.remove(array, index);
-			Put put = new Put(Bytes.toBytes(object.klyoId()));
 			put.addColumn(PROPERTY_FAMILY, Bytes.toBytes(eReference.getName()), toBytes(array));
 			table.put(put);
 		} catch (IOException e) {
@@ -341,10 +380,13 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 	@Override
 	public void unset(InternalEObject object, EStructuralFeature feature) {
 		KlyoEObject klyoEObject = KlyoEObjectAdapterFactoryImpl.getAdapter(object, KlyoEObject.class);
+		Put put = new Put(Bytes.toBytes(klyoEObject.klyoId()));
 		try {
-			Delete delete = new Delete(Bytes.toBytes(klyoEObject.klyoId()));
-			delete.addColumn(PROPERTY_FAMILY, Bytes.toBytes(feature.getName()));
-			table.delete(delete);
+//			Delete delete = new Delete(Bytes.toBytes(klyoEObject.klyoId()));
+//			delete.addColumn(PROPERTY_FAMILY, Bytes.toBytes(feature.getName()));
+//			table.delete(delete);
+			put.addColumn(PROPERTY_FAMILY, Bytes.toBytes(feature.getName()), null);
+			table.put(put);
 		} catch (IOException e) {
 			Logger.log(Logger.SEVERITY_ERROR,
 					MessageFormat.format("Unable to get containment information for {0}", klyoEObject));
@@ -353,45 +395,45 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 
 	@Override
 	public boolean isEmpty(InternalEObject object, EStructuralFeature feature) {
-		return isEmpty(null, object, feature);
+		return isEmptyAt(null, object, feature);
 	}
 	
 	@Override
-	public boolean isEmpty(Date date, InternalEObject object, EStructuralFeature feature) {
-		return size(date, object, feature) == 0;
+	public boolean isEmptyAt(Date date, InternalEObject object, EStructuralFeature feature) {
+		return sizeAt(date, object, feature) == 0;
 	}
 
 	@Override
 	public int size(InternalEObject object, EStructuralFeature feature) {
-		return size(null, object, feature);
+		return sizeAt(null, object, feature);
 	}
 	
 	@Override
-	public int size(Date date, InternalEObject object, EStructuralFeature feature) {
+	public int sizeAt(Date date, InternalEObject object, EStructuralFeature feature) {
 		KlyoEObject klyoEObject = KlyoEObjectAdapterFactoryImpl.getAdapter(object, KlyoEObject.class);
-		String[] array = (String[]) getFromTable(date, klyoEObject, feature);
+		String[] array = (String[]) getFromTable(null, date, klyoEObject, feature);
 		return array != null ? array.length : 0;
 	}
 
 	@Override
 	public boolean contains(InternalEObject object, EStructuralFeature feature, Object value) {
-		return contains(null, object, feature, value);
+		return containsAt(null, object, feature, value);
 	}
 
 	@Override
-	public boolean contains(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
-		return indexOf(date, object, feature, value) != -1;
+	public boolean containsAt(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
+		return indexOfAt(date, object, feature, value) != -1;
 	}
 	
 	@Override
 	public int indexOf(InternalEObject object, EStructuralFeature feature, Object value) {
-		return indexOf(null, object, feature, value);
+		return indexOfAt(null, object, feature, value);
 	}
 	
 	@Override
-	public int indexOf(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
+	public int indexOfAt(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
 		KlyoEObject klyoEObject = KlyoEObjectAdapterFactoryImpl.getAdapter(object, KlyoEObject.class);
-		String[] array = (String[]) getFromTable(date, klyoEObject, feature);
+		String[] array = (String[]) getFromTable(null, date, klyoEObject, feature);
 		if (array == null) {
 			return -1;
 		}
@@ -405,13 +447,13 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 
 	@Override
 	public int lastIndexOf(InternalEObject object, EStructuralFeature feature, Object value) {
-		return lastIndexOf(null, object, feature, value);
+		return lastIndexOfAt(null, object, feature, value);
 	}
 	
 	@Override
-	public int lastIndexOf(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
+	public int lastIndexOfAt(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
 		KlyoEObject klyoEObject = KlyoEObjectAdapterFactoryImpl.getAdapter(object, KlyoEObject.class);
-		String[] array = (String[]) getFromTable(date, klyoEObject, feature);
+		String[] array = (String[]) getFromTable(null, date, klyoEObject, feature);
 		if (array == null) {
 			return -1;
 		}
@@ -426,8 +468,8 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 	@Override
 	public void clear(InternalEObject object, EStructuralFeature feature) {
 		KlyoEObject klyoEObject = KlyoEObjectAdapterFactoryImpl.getAdapter(object, KlyoEObject.class);
+		Put put = new Put(Bytes.toBytes(klyoEObject.klyoId()));
 		try {
-			Put put = new Put(Bytes.toBytes(klyoEObject.klyoId()));
 			put.addColumn(PROPERTY_FAMILY, Bytes.toBytes(feature.getName()), toBytes(new String[] {}));
 			table.put(put);
 		} catch (IOException e) {
@@ -438,28 +480,28 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 
 	@Override
 	public Object[] toArray(InternalEObject object, EStructuralFeature feature) {
-		return toArray(null, object, feature);
+		return toArrayAt(null, object, feature);
 	}
 	
 	@Override
-	public Object[] toArray(Date date, InternalEObject object, EStructuralFeature feature) {
-		int size = size(date, object, feature);
+	public Object[] toArrayAt(Date date, InternalEObject object, EStructuralFeature feature) {
+		int size = sizeAt(date, object, feature);
 		Object[] result = new Object[size];
 		for (int index = 0; index < size; index++) {
-			result[index] = get(date, object, feature, index);
+			result[index] = getAt(date, object, feature, index);
 		}
 		return result;
 	}
 
 	@Override
 	public <T> T[] toArray(InternalEObject object, EStructuralFeature feature, T[] array) {
-		return toArray(null, object, feature, array);
+		return toArrayAt(null, object, feature, array);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T[] toArray(Date date, InternalEObject object, EStructuralFeature feature, T[] array) {
-		int size = size(date, object, feature);
+	public <T> T[] toArrayAt(Date date, InternalEObject object, EStructuralFeature feature, T[] array) {
+		int size = sizeAt(date, object, feature);
 		T[] result = null;
 		if (array.length < size) {
 			result = Arrays.copyOf(array, size);
@@ -467,28 +509,48 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 			result = array;
 		}
 		for (int index = 0; index < size; index++) {
-			result[index] = (T) get(date, object, feature, index);
+			result[index] = (T) getAt(date, object, feature, index);
 		}
+		return result;
+	}
+	
+	@Override
+	public SortedMap<Date, Object[]> toArrayAllBetween(Date startDate, Date endDate, InternalEObject object, EStructuralFeature feature) {
+		KlyoEObject klyoEObject = KlyoEObjectAdapterFactoryImpl.getAdapter(object, KlyoEObject.class);
+
+		SortedMap<Date, Object[]> result = new TreeMap<>();
+		SortedMap<Long, Object> all = getAllFromTable(startDate, endDate, klyoEObject, feature);
+
+		for (Entry<Long, Object> entry : all.entrySet()) {
+			if (feature instanceof EAttribute) {
+				result.put(new Date(entry.getKey()), Arrays.asList((String[]) entry.getValue()).stream().map(v -> parseValue((EAttribute) feature, (String) v)).toArray());
+			} else if (feature instanceof EReference) {
+				result.put(new Date(entry.getKey()), Arrays.asList((String[]) entry.getValue()).stream().map(v -> getEObject((String) v)).toArray());
+			} else {
+				throw new IllegalArgumentException(feature.toString());
+			}
+		}
+		
 		return result;
 	}
 
 	@Override
 	public int hashCode(InternalEObject object, EStructuralFeature feature) {
-		return hashCode(null, object, feature);
+		return hashCodeAt(null, object, feature);
 	}
 	
 	@Override
-	public int hashCode(Date date, InternalEObject object, EStructuralFeature feature) {
-		return toArray(date, object, feature).hashCode();
+	public int hashCodeAt(Date date, InternalEObject object, EStructuralFeature feature) {
+		return toArrayAt(date, object, feature).hashCode();
 	}
 
 	@Override
 	public InternalEObject getContainer(InternalEObject object) {
-		return getContainer(null, object);
+		return getContainerAt(null, object);
 	}
 
 	@Override
-	public InternalEObject getContainer(Date date, InternalEObject object) {
+	public InternalEObject getContainerAt(Date date, InternalEObject object) {
 		KlyoEObject klyoEObject = KlyoEObjectAdapterFactoryImpl.getAdapter(object, KlyoEObject.class);
 		
 		try {
@@ -514,11 +576,11 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 
 	@Override
 	public EStructuralFeature getContainingFeature(InternalEObject object) {
-		return getContainingFeature(null, object);
+		return getContainingFeatureAt(null, object);
 	}
 
 	@Override
-	public EStructuralFeature getContainingFeature(Date date, InternalEObject object) {
+	public EStructuralFeature getContainingFeatureAt(Date date, InternalEObject object) {
 		KlyoEObject klyoEObject = KlyoEObjectAdapterFactoryImpl.getAdapter(object, KlyoEObject.class);
 		
 		try {
@@ -551,7 +613,7 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 
 	@Override
 	public EObject getEObject(String id) {
-		if (id == null) {
+		if (StringUtils.isEmpty(id)) {
 			return null;
 		}
 		KlyoInternalEObject klyoEObject = loadedEObjects.get(id);
@@ -630,10 +692,10 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 	protected static String serializeValue(EAttribute eAttribute, Object value) {
 		return value != null ? EcoreUtil.convertToString(eAttribute.getEAttributeType(), value) : null;
 	}
-	
+
 	/**
-	 * Gets the {@link EStructuralFeature} {@code feature} from the {@link Table}
-	 * for the {@link KlyoEObject} {@code object} at a given moment
+	 * Gets the latest value for {@link EStructuralFeature} {@code feature} from the
+	 * {@link Table} for the {@link KlyoEObject} {@code object}
 	 * 
 	 * @param object
 	 * @param feature
@@ -642,33 +704,36 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 	 *         many-valued {@link EStructuralFeature}s
 	 */
 	protected Object getFromTable(KlyoEObject object, EStructuralFeature feature) {
-		return getFromTable(null, object, feature);
+		return getFromTable(null, null, object, feature);
 	}
-
+	
 	/**
-	 * Gets the {@link EStructuralFeature} {@code feature} from the {@link Table}
-	 * for the {@link KlyoEObject} {@code object} at a given moment
+	 * Gets the latest value for {@link EStructuralFeature} {@code feature} from the
+	 * {@link Table} for the {@link KlyoEObject} {@code object} between
+	 * <code>startDate</code> and <code>endDate</code>. 
 	 * 
-	 * @param date
-	 *            the moment
+	 * @param startDate
+	 *            the start moment, or <code>null</code> to indicate epoch time
+	 * @param endDate
+	 *            the end moment or <code>null</null> to indicate the latest possible time.
 	 * @param object
 	 * @param feature
 	 * @return The value of the {@code feature}. It can be a {@link String} for
 	 *         single-valued {@link EStructuralFeature}s or a {@link String}[] for
 	 *         many-valued {@link EStructuralFeature}s
 	 */
-	protected Object getFromTable(Date date, KlyoEObject object, EStructuralFeature feature) {
+	protected Object getFromTable(Date startDate, Date endDate, KlyoEObject object, EStructuralFeature feature) {
+		long start = startDate != null ? startDate.getTime() : 0;
+		long end = endDate != null && endDate.getTime() != Long.MAX_VALUE ? endDate.getTime() + 1 : Long.MAX_VALUE;
 		try {
 			Get get = new Get(Bytes.toBytes(object.klyoId()));
-			if (date != null) {
-				get.setTimeRange(0, date.getTime() + 1);
-			}
+			get.setTimeRange(start, end);
 			Result result = table.get(get);
-			byte[] value = result.getValue(PROPERTY_FAMILY, Bytes.toBytes(feature.getName()));
+			byte[] bytes = result.getValue(PROPERTY_FAMILY, Bytes.toBytes(feature.getName()));
 			if (!feature.isMany()) {
-				return Bytes.toString(value);
+				return bytes != null && bytes.length > 0 ? Bytes.toString(bytes) : null;
 			} else {
-				return toStrings(value);
+				return toStrings(bytes);
 			}
 		} catch (IOException e) {
 			Logger.log(Logger.SEVERITY_ERROR,
@@ -676,7 +741,63 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 		}
 		return null;
 	}
+	
 
+	/**
+	 * Gets all the values for {@link EStructuralFeature} {@code feature} from the
+	 * {@link Table} for the {@link KlyoEObject} {@code object} between
+	 * <code>startDate</code> and <code>endDate</code>.
+	 * 
+	 * @param startDate
+	 *            the start moment, or <code>null</code> to indicate epoch time
+	 * @param endDate
+	 *            the end moment or <code>null</null> to indicate the latest
+	 *            possible time.
+	 * @param object
+	 * @param feature
+	 * @return The values of the {@code feature}. It can be a {@link String}[] for
+	 *         single-valued {@link EStructuralFeature}s or a {@link String}[][] for
+	 *         many-valued {@link EStructuralFeature}s
+	 */
+	protected SortedMap<Long, Object> getAllFromTable(Date startDate, Date endDate, KlyoEObject object, EStructuralFeature feature) {
+		long start = startDate != null ? startDate.getTime() : 0;
+		long end = endDate != null && endDate.getTime() != Long.MAX_VALUE ? endDate.getTime() + 1 : Long.MAX_VALUE;
+		SortedMap<Long, Object> resultMap = new TreeMap<>();
+		try {
+			// Get the curent value at 'start'
+			{
+				Get get = new Get(Bytes.toBytes(object.klyoId()));
+				get.setTimeRange(0, start + 1);
+				Result result = table.get(get);
+				if (!result.isEmpty()) {
+					if (!feature.isMany()) {
+						resultMap.put(result.rawCells()[0].getTimestamp(), Bytes.toString(result.getValue(PROPERTY_FAMILY, Bytes.toBytes(feature.getName()))));
+					} else {
+						resultMap.put(result.rawCells()[0].getTimestamp(), toStrings(result.getValue(PROPERTY_FAMILY, Bytes.toBytes(feature.getName()))));
+					}
+				}
+			}
+			// Get the values between 'start' and 'end'
+			{
+				Get get = new Get(Bytes.toBytes(object.klyoId()));
+				get.setTimeRange(start, end);
+				get.setMaxVersions();
+				Result result = table.get(get);
+				List<Cell> columnCells = result.getColumnCells(PROPERTY_FAMILY, Bytes.toBytes(feature.getName()));
+				for (Cell cell : columnCells) {
+					if (!feature.isMany()) {
+						resultMap.put(cell.getTimestamp(), Bytes.toString(cell.getValueArray(), cell.getValueOffset(), cell.getValueLength()));
+					} else {
+						resultMap.put(cell.getTimestamp(), toStrings(cell.getValueArray()));
+					}
+				}
+			}
+		} catch (IOException e) {
+			Logger.log(Logger.SEVERITY_ERROR, MessageFormat.format("Unable to get property ''{0}'' for ''{1}''", feature.getName(), object));
+		}
+		return resultMap;
+	}
+	
 	protected static byte[] toBytes(String[] strings) {
 		try {
 			ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -698,18 +819,13 @@ public class DirectWriteHbaseResourceEStoreImpl implements SearcheableTimedResou
 		}
 		String[] result = null;
 		ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
-		ObjectInputStream objectInputStream = null;
-		try {
-			objectInputStream = new ObjectInputStream(byteArrayInputStream);
+		try (ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream)) {
 			result = (String[]) objectInputStream.readObject();
-
 		} catch (IOException e) {
 			Logger.log(Logger.SEVERITY_ERROR,
 					MessageFormat.format("Unable to convert ''{0}'' to String[]", bytes.toString()));
 		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} finally {
-			IOUtils.closeQuietly(objectInputStream);
+			Logger.log(Logger.SEVERITY_ERROR, e);
 		}
 		return result;
 

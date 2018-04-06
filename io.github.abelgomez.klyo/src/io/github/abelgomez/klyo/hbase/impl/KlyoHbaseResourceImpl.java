@@ -52,6 +52,8 @@ import io.github.abelgomez.klyo.core.impl.KlyoEObjectImpl;
 import io.github.abelgomez.klyo.estores.SearcheableResourceEStore;
 import io.github.abelgomez.klyo.estores.SearcheableTimedResourceEStore;
 import io.github.abelgomez.klyo.estores.TimedEStore;
+import io.github.abelgomez.klyo.estores.impl.IsSetCachingDelegatedEStoreImpl;
+import io.github.abelgomez.klyo.estores.impl.SizeCachingDelegatedEStoreImpl;
 import io.github.abelgomez.klyo.hbase.estores.impl.DirectWriteHbaseResourceEStoreImpl;
 
 public class KlyoHbaseResourceImpl extends ResourceImpl implements KlyoResource {
@@ -169,7 +171,7 @@ public class KlyoHbaseResourceImpl extends ResourceImpl implements KlyoResource 
 	@SuppressWarnings("unchecked")
 	@Override
 	public EList<EObject> getContents(Date date) {
-		return ECollections.unmodifiableEList((EList<EObject>)(Object)ECollections.asEList(eStore().toArray(date, DUMMY_ROOT_EOBJECT, ROOT_CONTENTS_ESTRUCTURALFEATURE)));
+		return ECollections.unmodifiableEList((EList<EObject>)(Object)ECollections.asEList(eStore().toArrayAt(date, DUMMY_ROOT_EOBJECT, ROOT_CONTENTS_ESTRUCTURALFEATURE)));
 	}
 
 	public TreeIterator<EObject> getAllContents(final Date date) {
@@ -248,7 +250,8 @@ public class KlyoHbaseResourceImpl extends ResourceImpl implements KlyoResource 
 	 * @throws IOException
 	 */
 	protected SearcheableTimedResourceEStore createResourceEStore(Connection connection) throws IOException {
-		return new DirectWriteHbaseResourceEStoreImpl(this, connection);
+		return new IsSetCachingDelegatedEStoreImpl(
+				new SizeCachingDelegatedEStoreImpl(new DirectWriteHbaseResourceEStoreImpl(this, connection)));
 	}
 
 	/**

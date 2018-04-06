@@ -11,6 +11,7 @@
 package io.github.abelgomez.klyo.estores.impl;
 
 import java.util.Date;
+import java.util.SortedMap;
 
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
@@ -34,9 +35,9 @@ public class DelegatedResourceEStoreImpl implements SearcheableTimedResourceESto
 	/**
 	 * The wrapped {@link SearcheableResourceEStore}
 	 */
-	protected SearcheableResourceEStore eStore;
+	protected SearcheableTimedResourceEStore eStore;
 
-	public DelegatedResourceEStoreImpl(SearcheableResourceEStore eStore) {
+	public DelegatedResourceEStoreImpl(SearcheableTimedResourceEStore eStore) {
 		this.eStore = eStore;
 	}
 
@@ -48,52 +49,56 @@ public class DelegatedResourceEStoreImpl implements SearcheableTimedResourceESto
 		return eStore.getEObject(id);
 	}
 
-	public Object get(Date date, InternalEObject object, EStructuralFeature feature, int index) {
-		return eStore.get(date, object, feature, index);
+	public Object getAt(Date date, InternalEObject object, EStructuralFeature feature, int index) {
+		return eStore.getAt(date, object, feature, index);
+	}
+	
+	public SortedMap<Date, Object> getAllBetween(Date startDate, Date endDate, InternalEObject object, EStructuralFeature feature, int index) {
+		return eStore.getAllBetween(startDate, endDate, object, feature, index);
 	}
 
-	public boolean isSet(Date date, InternalEObject object, EStructuralFeature feature) {
-		return eStore.isSet(date, object, feature);
+	public boolean isSetAt(Date date, InternalEObject object, EStructuralFeature feature) {
+		return eStore.isSetAt(date, object, feature);
 	}
 
-	public boolean isEmpty(Date date, InternalEObject object, EStructuralFeature feature) {
-		return eStore.isEmpty(date, object, feature);
+	public boolean isEmptyAt(Date date, InternalEObject object, EStructuralFeature feature) {
+		return eStore.isEmptyAt(date, object, feature);
 	}
 
-	public int size(Date date, InternalEObject object, EStructuralFeature feature) {
-		return eStore.size(date, object, feature);
+	public int sizeAt(Date date, InternalEObject object, EStructuralFeature feature) {
+		return eStore.sizeAt(date, object, feature);
 	}
 
-	public boolean contains(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
-		return eStore.contains(date, object, feature, value);
+	public boolean containsAt(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
+		return eStore.containsAt(date, object, feature, value);
 	}
 
-	public int indexOf(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
-		return eStore.indexOf(date, object, feature, value);
+	public int indexOfAt(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
+		return eStore.indexOfAt(date, object, feature, value);
 	}
 
-	public int lastIndexOf(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
-		return eStore.lastIndexOf(date, object, feature, value);
+	public int lastIndexOfAt(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
+		return eStore.lastIndexOfAt(date, object, feature, value);
 	}
 
-	public Object[] toArray(Date date, InternalEObject object, EStructuralFeature feature) {
-		return eStore.toArray(date, object, feature);
+	public Object[] toArrayAt(Date date, InternalEObject object, EStructuralFeature feature) {
+		return eStore.toArrayAt(date, object, feature);
 	}
 
-	public <T> T[] toArray(Date date, InternalEObject object, EStructuralFeature feature, T[] array) {
-		return eStore.toArray(date, object, feature, array);
+	public <T> T[] toArrayAt(Date date, InternalEObject object, EStructuralFeature feature, T[] array) {
+		return eStore.toArrayAt(date, object, feature, array);
 	}
 
-	public int hashCode(Date date, InternalEObject object, EStructuralFeature feature) {
-		return eStore.hashCode(date, object, feature);
+	public int hashCodeAt(Date date, InternalEObject object, EStructuralFeature feature) {
+		return eStore.hashCodeAt(date, object, feature);
 	}
 
-	public InternalEObject getContainer(Date date, InternalEObject object) {
-		return eStore.getContainer(date, object);
+	public InternalEObject getContainerAt(Date date, InternalEObject object) {
+		return eStore.getContainerAt(date, object);
 	}
 
-	public EStructuralFeature getContainingFeature(Date date, InternalEObject object) {
-		return eStore.getContainingFeature(date, object);
+	public EStructuralFeature getContainingFeatureAt(Date date, InternalEObject object) {
+		return eStore.getContainingFeatureAt(date, object);
 	}
 
 	public Object get(InternalEObject object, EStructuralFeature feature, int index) {
@@ -155,6 +160,12 @@ public class DelegatedResourceEStoreImpl implements SearcheableTimedResourceESto
 	public <T> T[] toArray(InternalEObject object, EStructuralFeature feature, T[] array) {
 		return eStore.toArray(object, feature, array);
 	}
+	
+	@Override
+	public SortedMap<Date, Object[]> toArrayAllBetween(Date startDate, Date endDate, InternalEObject object, EStructuralFeature feature) {
+		return eStore.toArrayAllBetween(startDate, endDate, object, feature);
+	}
+
 
 	public int hashCode(InternalEObject object, EStructuralFeature feature) {
 		return eStore.hashCode(object, feature);

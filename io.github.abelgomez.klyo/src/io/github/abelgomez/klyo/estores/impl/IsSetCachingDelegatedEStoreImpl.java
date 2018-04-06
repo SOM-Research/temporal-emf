@@ -79,11 +79,11 @@ public class IsSetCachingDelegatedEStoreImpl extends DelegatedResourceEStoreImpl
 	
 	protected Map<MapKey, Boolean> isSetCache;
 	
-	public IsSetCachingDelegatedEStoreImpl(SearcheableResourceEStore eStore) {
+	public IsSetCachingDelegatedEStoreImpl(SearcheableTimedResourceEStore eStore) {
 		this(eStore, DEFAULT_IS_SET_CACHE_SIZE);
 	}
 
-	public IsSetCachingDelegatedEStoreImpl(SearcheableResourceEStore eStore, int sizeCacheSize) {
+	public IsSetCachingDelegatedEStoreImpl(SearcheableTimedResourceEStore eStore, int sizeCacheSize) {
 		super(eStore);
 		this.isSetCache = new LRUMap<>(sizeCacheSize);
 	}
@@ -96,11 +96,14 @@ public class IsSetCachingDelegatedEStoreImpl extends DelegatedResourceEStoreImpl
 
 	@Override
 	public boolean isSet(InternalEObject object, EStructuralFeature feature) {
-		Boolean isSet = isSetCache.get(new MapKey(object, feature));
+		MapKey key = new MapKey(object, feature);
+		Boolean isSet = isSetCache.get(key);
 		if (isSet != null) {
 			return isSet;
 		} else {
-			return eStore.isSet(object, feature);
+			isSet = eStore.isSet(object, feature);
+			isSetCache.put(key, isSet);
+			return isSet;
 		}
 	}
 

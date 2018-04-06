@@ -80,11 +80,11 @@ public class SizeCachingDelegatedEStoreImpl extends DelegatedResourceEStoreImpl 
 	protected Map<MapKey, Integer> sizeCache;
 	
 	
-	public SizeCachingDelegatedEStoreImpl(SearcheableResourceEStore eStore) {
+	public SizeCachingDelegatedEStoreImpl(SearcheableTimedResourceEStore eStore) {
 		this(eStore, DEFAULT_SIZE_CACHE_SIZE);
 	}
 
-	public SizeCachingDelegatedEStoreImpl(SearcheableResourceEStore eStore, int sizeCacheSize) {
+	public SizeCachingDelegatedEStoreImpl(SearcheableTimedResourceEStore eStore, int sizeCacheSize) {
 		super(eStore);
 		this.sizeCache = new LRUMap<>(sizeCacheSize);
 	}
