@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Klyo UI Plugin
 Bundle-SymbolicName: io.github.abelgomez.klyo.ui;singleton:=true
-Bundle-Version: 0.2.0.qualifier
+Bundle-Version: 0.2.1.qualifier
 Bundle-Activator: io.github.abelgomez.klyo.ui.KlyoUiPlugin
 Bundle-Vendor: Abel Gómez
 Require-Bundle: org.eclipse.core.runtime,

@@ -2,7 +2,7 @@
 <feature
       id="io.github.abelgomez.klyo.feature"
       label="Klyo Persistence Store"
-      version="0.2.0.qualifier"
+      version="0.2.1.qualifier"
       provider-name="Abel Gómez">
 
    <description url="https://github.com/abelgomez/klyo">
@@ -131,14 +131,14 @@ This Agreement is governed by the laws of the State of New York and the intellec
          id="io.github.abelgomez.klyo"
          download-size="0"
          install-size="0"
-         version="0.2.0.qualifier"
+         version="0.2.1.qualifier"
          unpack="false"/>
 
    <plugin
          id="io.github.abelgomez.klyo.ui"
          download-size="0"
          install-size="0"
-         version="0.2.0.qualifier"
+         version="0.2.1.qualifier"
          unpack="false"/>
 
 </feature>
