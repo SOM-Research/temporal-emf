@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.8"?><target name="Temporal EMF Target Platform" sequenceNumber="3">
+<locations>
+<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+<unit id="org.eclipse.emf.sdk.feature.group" version="2.13.0.v20170609-0928"/>
+<repository location="http://download.eclipse.org/releases/oxygen"/>
+</location>
+<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+<unit id="org.eclipse.sdk.ide" version="4.7.3.M20180330-0640"/>
+<repository location="http://download.eclipse.org/eclipse/updates/4.7"/>
+</location>
+<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+<unit id="org.apache.hadoop.hbase.feature.feature.group" version="1.2.6.201803071856"/>
+<repository location="https://abelgomez.github.io/eclipse.hbase/updates/"/>
+</location>
+</locations>
+</target>
