@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site
+      associateSitesURL="associateSites.xml">
+   <description name="Klyo" url="http://abelgomez.github.io/klyo/updates">
+      The Klyo temporal persistence layer
+   </description>
+   <feature url="features/edu.uoc.som.temf.feature_0.1.0.201804262009.jar" id="edu.uoc.som.temf.feature" version="0.1.0.201804262009">
+      <category name="TemporalEMF"/>
+   </feature>
+   <category-def name="TemporalEMF" label="TemporalEMF">
+      <description>
+         The TemporalEMF time-aware metamodeling framework and persistence layer
+      </description>
+   </category-def>
+</site>
