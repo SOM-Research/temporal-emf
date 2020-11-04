@@ -1,0 +1,49 @@
+<%-
+Copyright (c) 2020 SOM Research Lab.
+All rights reserved. This program and the accompanying materials
+are made available under the terms of the Eclipse Public License v1.0
+which accompanies this distribution, and is available at
+http://www.eclipse.org/legal/epl-v10.html
+
+Contributors:
+    Abel Gómez - initial API and implementation
+-%>
+<%if (isInterface) {%>
+	/**
+	 * Returns whether the value of the '{@link <%=genClass.getRawQualifiedInterfaceName()%>#<%=genFeature.getGetAccessor()%> <em><%=genFeature.getFormattedName()%></em>}' <%=genFeature.getFeatureKind()%> is set at the given instant.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return whether the value of the '<em><%=genFeature.getFormattedName()%></em>' <%=genFeature.getFeatureKind()%> is set at the given instant.
+	 * @see #isSet<%=genFeature.getAccessorName()%>()
+	 * @generated
+	 */
+<%} else {%>
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+    <%if (genFeature.hasAPITags()) {%>
+	 * <%=genFeature.getAPITags(genModel.getIndentation(stringBuffer))%>
+    <%}%>
+	 * @generated
+	 */
+<%}%>
+        <%if (isJDK50 && genFeature.hasAPIDeprecatedTag()) {%>
+	@Deprecated
+        <%}%>
+<%if (!isImplementation) {%>
+	boolean isSet<%=genFeature.getAccessorName()%>At(<%=genModel.getImportedName("java.time.Instant")%> instant);
+
+<%} else {%>
+  <%if (useInterfaceOverrideAnnotation  && !genClass.isMapEntry() && !genFeature.isSuppressedIsSetVisibility()) {%>
+	@Override
+  <%}%>
+	public boolean isSet<%=genFeature.getAccessorName()%>At(<%=genModel.getImportedName("java.time.Instant")%> instant)
+	{
+    <%if (genModel.isReflectiveDelegation()) {%>
+		return eIsSetAt(instant, <%=genFeature.getQualifiedFeatureAccessor()%>);
+    <%} else {%>
+		throw new UnsupportedOperationException();
+    <%}%>
+	}
+
+<%}%>

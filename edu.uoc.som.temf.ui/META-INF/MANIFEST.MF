@@ -19,6 +19,8 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.emf.converter,
  org.eclipse.emf.importer,
  org.eclipse.emf.ecore.editor,
- edu.uoc.som.temf;bundle-version="0.1.0"
+ edu.uoc.som.temf;bundle-version="0.1.0",
+ edu.uoc.som.temf.generator;bundle-version="0.1.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
+Automatic-Module-Name: edu.uoc.som.temf.ui

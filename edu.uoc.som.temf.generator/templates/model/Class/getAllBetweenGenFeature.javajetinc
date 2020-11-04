@@ -1,0 +1,50 @@
+<%-
+Copyright (c) 2020 SOM Research Lab.
+All rights reserved. This program and the accompanying materials
+are made available under the terms of the Eclipse Public License v1.0
+which accompanies this distribution, and is available at
+http://www.eclipse.org/legal/epl-v10.html
+
+Contributors:
+    Abel Gómez - initial API and implementation
+-%>
+<%if (isInterface) {%>
+	/**
+	 * Returns the value of the '<em><b><%=genFeature.getFormattedName()%></b></em>' <%=genFeature.getFeatureKind()%> in the given time span.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em><%=genFeature.getFormattedName()%></em>' <%=genFeature.getFeatureKind()%> in the given time span.
+	 * @see #<%=genFeature.getGetAccessor()%>()
+	 * @generated
+	 */
+<%} else {%>
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+    <%if (genFeature.hasAPITags()) {%>
+	 * <%=genFeature.getAPITags(genModel.getIndentation(stringBuffer))%>
+    <%}%>
+	 * @generated
+	 */
+<%}%>
+        <%if (isJDK50 && genFeature.hasAPIDeprecatedTag()) {%>
+	@Deprecated
+        <%}%>
+<%if (!isImplementation) {%>
+	<%=genModel.getImportedName("java.util.SortedMap")%><<%=genModel.getImportedName("java.util.Date")%>,<%=genFeature.getObjectType(genClass)%>> <%=genFeature.getGetAccessor()%>AllBetween(<%=genModel.getImportedName("java.time.Instant")%> start, <%=genModel.getImportedName("java.time.Instant")%> end);
+
+<%} else {%>
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+  <%if (useInterfaceOverrideAnnotation && !genClass.isMapEntry() && !genClass.hasCollidingGetAccessorOperation(genFeature) && !genFeature.isSuppressedGetVisibility()) {%>
+	@Override
+  <%}%>
+	public <%=genModel.getImportedName("java.util.SortedMap")%><<%=genModel.getImportedName("java.util.Date")%>,<%=genFeature.getObjectType(genClass)%>> <%=genFeature.getGetAccessor()%><%if (genClass.hasCollidingGetAccessorOperation(genFeature)) {%>_<%}%>AllBetween(<%=genModel.getImportedName("java.time.Instant")%> start, <%=genModel.getImportedName("java.time.Instant")%> end)
+	{
+    <%if (genModel.isReflectiveDelegation()) {%>
+		return <%if (!isJDK50 && genFeature.isPrimitiveType()) {%>(<%}%>(<%=genModel.getImportedName("java.util.SortedMap")%>)eGetAllBetween(start, end, <%=genFeature.getQualifiedFeatureAccessor()%>)<%if (!isJDK50 && genFeature.isPrimitiveType()) {%>).<%=genFeature.getPrimitiveValueFunction()%>()<%}%>;
+    <%} else {%>
+		throw new UnsupportedOperationException();
+    <%}%>
+	}
+
+<%}%>

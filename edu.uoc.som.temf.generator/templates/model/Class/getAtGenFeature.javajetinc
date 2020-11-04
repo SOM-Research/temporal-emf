@@ -1,0 +1,52 @@
+<%-
+Copyright (c) 2020 SOM Research Lab.
+All rights reserved. This program and the accompanying materials
+are made available under the terms of the Eclipse Public License v1.0
+which accompanies this distribution, and is available at
+http://www.eclipse.org/legal/epl-v10.html
+
+Contributors:
+    Abel Gómez - initial API and implementation
+-%>
+<%if (isInterface) {%>
+	/**
+	 * Returns the value of the '<em><b><%=genFeature.getFormattedName()%></b></em>' <%=genFeature.getFeatureKind()%> at the given instant.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em><%=genFeature.getFormattedName()%></em>' <%=genFeature.getFeatureKind()%> at the given instant.
+	 * @see #<%=genFeature.getGetAccessor()%>()
+	 * @generated
+	 */
+<%} else {%>
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+    <%if (genFeature.hasAPITags()) {%>
+	 * <%=genFeature.getAPITags(genModel.getIndentation(stringBuffer))%>
+    <%}%>
+	 * @generated
+	 */
+<%}%>
+        <%if (isJDK50 && genFeature.hasAPIDeprecatedTag()) {%>
+	@Deprecated
+        <%}%>
+<%if (!isImplementation) {%>
+	<%=genFeature.getImportedType(genClass)%> <%=genFeature.getGetAccessor()%>At(<%=genModel.getImportedName("java.time.Instant")%> instant);
+
+<%} else {%>
+  <%if (genModel.useGenerics() && ((genFeature.isContainer() || genFeature.isResolveProxies()) && !genFeature.isListType() && genFeature.isUncheckedCast(genClass) || genFeature.isListType() && !genFeature.isFeatureMapType() && (genModel.isReflectiveDelegation() || genModel.isVirtualDelegation() || (genModel.isDynamicDelegation() && !genFeature.isVolatile())) || genFeature.isListDataType() && genFeature.hasDelegateFeature() || genFeature.isListType() && genFeature.hasSettingDelegate())) {%>
+	@SuppressWarnings("unchecked")
+  <%}%>
+  <%if (useInterfaceOverrideAnnotation && !genClass.isMapEntry() && !genFeature.isSuppressedGetVisibility()) {%>
+	@Override
+  <%}%>
+	public <%=genFeature.getImportedType(genClass)%> <%=genFeature.getGetAccessor()%>At(<%=genModel.getImportedName("java.time.Instant")%> instant)
+	{
+    <%if (genModel.isReflectiveDelegation()) {%>
+		return <%if (!isJDK50 && genFeature.isPrimitiveType()) {%>(<%}%>(<%=genFeature.getObjectType(genClass)%>)eGetAt(instant, <%=genFeature.getQualifiedFeatureAccessor()%>)<%if (!isJDK50 && genFeature.isPrimitiveType()) {%>).<%=genFeature.getPrimitiveValueFunction()%>()<%}%>;
+    <%} else {%>
+		throw new UnsupportedOperationException();
+    <%}%>
+	}
+
+<%}%>

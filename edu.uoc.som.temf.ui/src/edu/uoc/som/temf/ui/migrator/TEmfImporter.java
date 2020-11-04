@@ -31,6 +31,8 @@ import org.eclipse.emf.ecore.util.Diagnostician;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.importer.ModelImporter;
 
+import edu.uoc.som.temf.generator.migrator.TEmfMigratorUtil;
+
 /**
  * @author abelgomez
  */
