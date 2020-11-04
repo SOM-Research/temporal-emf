@@ -1,17 +1,26 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<?pde version="3.8"?><target name="Temporal EMF Target Platform" sequenceNumber="3">
+<?pde version="3.8"?>
+<target name="Temporal EMF Target Platform" sequenceNumber="3">
 <locations>
-<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
-<unit id="org.eclipse.emf.sdk.feature.group" version="2.13.0.v20170609-0928"/>
-<repository location="http://download.eclipse.org/releases/oxygen"/>
-</location>
-<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
-<unit id="org.eclipse.sdk.ide" version="4.7.3.M20180330-0640"/>
-<repository location="http://download.eclipse.org/eclipse/updates/4.7"/>
-</location>
-<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
-<unit id="org.apache.hadoop.hbase.feature.feature.group" version="1.2.6.201803071856"/>
-<repository location="https://abelgomez.github.io/eclipse.hbase/updates/"/>
-</location>
+	<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+		<repository location="http://download.eclipse.org/eclipse/updates/4.14/"/>
+		<unit id="org.eclipse.sdk.ide" version="4.14.0.I20191210-0610"/>
+	</location>
+	<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+		<repository location="https://download.eclipse.org/tools/orbit/downloads/drops/R20191126223242/repository"/>
+		<unit id="com.google.guava" version="27.1.0.v20190517-1946"/>
+		<unit id="com.google.guava.source" version="27.1.0.v20190517-1946"/>
+		<unit id="org.apache.commons.io" version="2.6.0.v20190123-2029"/>
+		<unit id="org.apache.commons.io.source" version="2.6.0.v20190123-2029"/>
+		<unit id="org.apache.commons.lang3" version="3.1.0.v201403281430"/>
+		<unit id="org.apache.commons.lang3.source" version="3.1.0.v201403281430"/>
+		<unit id="net.bytebuddy.byte-buddy" version="1.9.0.v20181107-1410"/>
+		<unit id="net.bytebuddy.byte-buddy.source" version="1.9.0.v20181107-1410"/>
+	</location>
+	<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+		<repository location="http://download.eclipse.org/releases/2019-12"/>
+		<unit id="org.eclipse.emf.sdk.feature.group" version="2.20.0.v20191028-0905"/>
+	</location>
 </locations>
+	<targetJRE path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 </target>
