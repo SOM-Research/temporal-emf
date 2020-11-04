@@ -10,7 +10,7 @@
  *******************************************************************************/
 package edu.uoc.som.temf.estores;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.SortedMap;
 
 import org.eclipse.emf.ecore.EObject;
@@ -27,17 +27,17 @@ import org.eclipse.emf.ecore.InternalEObject.EStore;
  */
 public interface TStore extends InternalEObject.EStore {
 
-	public final Date EARLIEST_DATE = new Date(0);
+	public final Instant EARLIEST_INSTANT = Instant.MIN;
 
-	public final Date OLDEST_DATE = new Date(Long.MAX_VALUE);
+	public final Instant OLDEST_INSTANT = Instant.MAX;
 	
 	/**
 	 * Returns the value at the index in the
 	 * {@link EObject#eGet(EStructuralFeature,boolean) content} of the object's
-	 * feature at a given moment.
+	 * feature at a given instant.
 	 * 
-	 * @param date
-	 *            the moment date
+	 * @param instant
+	 *            the instant
 	 * @param object
 	 *            the object in question.
 	 * @param feature
@@ -46,17 +46,17 @@ public interface TStore extends InternalEObject.EStore {
 	 *            an index within the content or {@link #NO_INDEX}.
 	 * @return the value at the index in the content of the object's feature.
 	 */
-	Object getAt(Date date, InternalEObject object, EStructuralFeature feature, int index);
+	Object getAt(Instant instant, InternalEObject object, EStructuralFeature feature, int index);
 
 	/**
 	 * Returns all the values at the index in the
 	 * {@link EObject#eGet(EStructuralFeature,boolean) content} of the object's
-	 * feature between the given moment.
+	 * feature between the given instants.
 	 * 
-	 * @param startDate
-	 *            the starting date
-	 * @param endDate
-	 *            the end date
+	 * @param startInstant
+	 *            the starting instant
+	 * @param endInstant
+	 *            the end instant
 	 * @param object
 	 *            the object in question.
 	 * @param feature
@@ -65,27 +65,27 @@ public interface TStore extends InternalEObject.EStore {
 	 *            an index within the content or {@link #NO_INDEX}.
 	 * @return the value at the index in the content of the object's feature.
 	 */
-	SortedMap<Date, Object> getAllBetween(Date startDate, Date endDate, InternalEObject object, EStructuralFeature feature, int index);
+	SortedMap<Instant, Object> getAllBetween(Instant startInstant, Instant endInstant, InternalEObject object, EStructuralFeature feature, int index);
 	
 	/**
-	 * Returns whether the object's feature is considered set at a given moment.
+	 * Returns whether the object's feature is considered set at a given instant.
 	 * 
-	 * @param date
-	 *            the moment date
+	 * @param instant
+	 *            the instant
 	 * @param object
 	 *            the object in question.
 	 * @param feature
 	 *            a feature of the object.
 	 * @return <code>true</code> if the object's feature is considered set.
 	 */
-	boolean isSetAt(Date date, InternalEObject object, EStructuralFeature feature);
+	boolean isSetAt(Instant instant, InternalEObject object, EStructuralFeature feature);
 
 	/**
 	 * Returns whether the {@link EObject#eGet(EStructuralFeature,boolean) content}
-	 * of the object's feature is empty at a given moment.
+	 * of the object's feature is empty at a given instant.
 	 * 
-	 * @param date
-	 *            the moment date
+	 * @param instant
+	 *            the instant
 	 * @param object
 	 *            the object in question.
 	 * @param feature
@@ -93,15 +93,15 @@ public interface TStore extends InternalEObject.EStore {
 	 *            object.
 	 * @return <code>true</code> if the content of the object's feature is empty.
 	 */
-	boolean isEmptyAt(Date date, InternalEObject object, EStructuralFeature feature);
+	boolean isEmptyAt(Instant instant, InternalEObject object, EStructuralFeature feature);
 
 	/**
 	 * Returns the number of values in the
 	 * {@link EObject#eGet(EStructuralFeature,boolean) content} of the object's
-	 * feature at a given moment.
+	 * feature at a given instant.
 	 * 
-	 * @param date
-	 *            the moment date
+	 * @param instant
+	 *            the instant
 	 * @param object
 	 *            the object in question.
 	 * @param feature
@@ -109,14 +109,14 @@ public interface TStore extends InternalEObject.EStore {
 	 *            object.
 	 * @return the number of values in the content of the object's feature.
 	 */
-	int sizeAt(Date date, InternalEObject object, EStructuralFeature feature);
+	int sizeAt(Instant instant, InternalEObject object, EStructuralFeature feature);
 
 	/**
 	 * Returns whether the {@link EObject#eGet(EStructuralFeature,boolean) content}
-	 * of the object's feature contains the given value at a given moment.
+	 * of the object's feature contains the given value at a given instant.
 	 * 
-	 * @param date
-	 *            the moment date
+	 * @param instant
+	 *            the instant
 	 * @param object
 	 *            the object in question.
 	 * @param feature
@@ -127,15 +127,15 @@ public interface TStore extends InternalEObject.EStore {
 	 * @return <code>true</code> if the content of the object's feature contains the
 	 *         given value.
 	 */
-	boolean containsAt(Date date, InternalEObject object, EStructuralFeature feature, Object value);
+	boolean containsAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value);
 
 	/**
 	 * Returns the first index of the given value in the
 	 * {@link EObject#eGet(EStructuralFeature,boolean) content} of the object's
-	 * feature at a given moment.
+	 * feature at a given instant.
 	 * 
-	 * @param date
-	 *            the moment date
+	 * @param instant
+	 *            the instant
 	 * @param object
 	 *            the object in question.
 	 * @param feature
@@ -146,15 +146,15 @@ public interface TStore extends InternalEObject.EStore {
 	 * @return the first index of the given value in the content of the object's
 	 *         feature.
 	 */
-	int indexOfAt(Date date, InternalEObject object, EStructuralFeature feature, Object value);
+	int indexOfAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value);
 
 	/**
 	 * Returns the last index of the given value in the
 	 * {@link EObject#eGet(EStructuralFeature,boolean) content} of the object's
-	 * feature at a given moment.
+	 * feature at a given instant.
 	 * 
-	 * @param date
-	 *            the moment date
+	 * @param instant
+	 *            the instant
 	 * @param object
 	 *            the object in question.
 	 * @param feature
@@ -165,15 +165,15 @@ public interface TStore extends InternalEObject.EStore {
 	 * @return the last index of the given value in the content of the object's
 	 *         feature.
 	 */
-	int lastIndexOfAt(Date date, InternalEObject object, EStructuralFeature feature, Object value);
+	int lastIndexOfAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value);
 
 	/**
 	 * Returns a new array of the values in the
 	 * {@link EObject#eGet(EStructuralFeature,boolean) content} of the object's
-	 * feature at a given moment.
+	 * feature at a given instant.
 	 * 
-	 * @param date
-	 *            the moment date
+	 * @param instant
+	 *            the instant
 	 * @param object
 	 *            the object in question.
 	 * @param feature
@@ -181,16 +181,16 @@ public interface TStore extends InternalEObject.EStore {
 	 *            object.
 	 * @return a new array of the values in the content of the object's feature.
 	 */
-	Object[] toArrayAt(Date date, InternalEObject object, EStructuralFeature feature);
+	Object[] toArrayAt(Instant instant, InternalEObject object, EStructuralFeature feature);
 
 	/**
 	 * Returns an array of the values in the
 	 * {@link EObject#eGet(EStructuralFeature,boolean) content} of the object's
-	 * feature at a given moment. The given array will be used, unless it's too
+	 * feature at a given instant. The given array will be used, unless it's too
 	 * small, in which case a new array of the same type is allocated instead.
 	 * 
-	 * @param date
-	 *            the moment date
+	 * @param instant
+	 *            the instant
 	 * @param object
 	 *            the object in question.
 	 * @param feature
@@ -200,17 +200,17 @@ public interface TStore extends InternalEObject.EStore {
 	 *            the array to fill.
 	 * @return an array of the values in the content of the object's feature.
 	 */
-	<T> T[] toArrayAt(Date date, InternalEObject object, EStructuralFeature feature, T[] array);
+	<T> T[] toArrayAt(Instant instant, InternalEObject object, EStructuralFeature feature, T[] array);
 
 	/**
 	 * Returns a new array of the values in the
 	 * {@link EObject#eGet(EStructuralFeature,boolean) content} of the object's
 	 * feature at a given moment.
 	 * 
-	 * @param startDate
-	 *            the starting date
-	 * @param endDate
-	 *            the end date
+	 * @param startInstant
+	 *            the starting instant
+	 * @param endInstant
+	 *            the end instant
 	 * @param object
 	 *            the object in question.
 	 * @param feature
@@ -218,14 +218,14 @@ public interface TStore extends InternalEObject.EStore {
 	 *            object.
 	 * @return a new array of the values in the content of the object's feature.
 	 */
-	SortedMap<Date, Object[]> toArrayAllBetween(Date startDate, Date endDate, InternalEObject object, EStructuralFeature feature);
+	SortedMap<Instant, Object[]> toArrayAllBetween(Instant startInstant, Instant endInstant, InternalEObject object, EStructuralFeature feature);
 	
 	/**
 	 * Returns the hash code of the {@link EObject#eGet(EStructuralFeature,boolean)
-	 * content} of the object's feature at a given moment.
+	 * content} of the object's feature at a given instant.
 	 * 
-	 * @param date
-	 *            the moment date
+	 * @param instant
+	 *            the instant
 	 * @param object
 	 *            the object in question.
 	 * @param feature
@@ -233,27 +233,27 @@ public interface TStore extends InternalEObject.EStore {
 	 *            object.
 	 * @return the hash code of the content of the object's feature.
 	 */
-	int hashCodeAt(Date date, InternalEObject object, EStructuralFeature feature);
+	int hashCodeAt(Instant instant, InternalEObject object, EStructuralFeature feature);
 
 	/**
-	 * Returns the object's {@link EObject#eContainer container} at a given moment.
+	 * Returns the object's {@link EObject#eContainer container} at a given instant.
 	 * 
-	 * @param date
-	 *            the moment date
+	 * @param instant
+	 *            the instant
 	 * @return the object's container.
 	 * @see EObject#eContainer
 	 */
-	InternalEObject getContainerAt(Date date, InternalEObject object);
+	InternalEObject getContainerAt(Instant instant, InternalEObject object);
 
 	/**
 	 * Returns the object's {@link EObject#eContainingFeature containing feature} at
-	 * a given moment.
+	 * a given instant.
 	 * 
-	 * @param date
-	 *            the moment date
+	 * @param instant
+	 *            the instant
 	 * @return the object's containing feature.
 	 * @see EObject#eContainingFeature
 	 */
-	EStructuralFeature getContainingFeatureAt(Date date, InternalEObject object);
+	EStructuralFeature getContainingFeatureAt(Instant instant, InternalEObject object);
 
 }
