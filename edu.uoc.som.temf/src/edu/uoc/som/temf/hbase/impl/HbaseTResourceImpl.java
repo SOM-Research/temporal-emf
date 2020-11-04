@@ -12,8 +12,8 @@ package edu.uoc.som.temf.hbase.impl;
 
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +43,8 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl;
 
 import edu.uoc.som.temf.Logger;
-import edu.uoc.som.temf.core.TObject;
 import edu.uoc.som.temf.core.InternalTObject;
+import edu.uoc.som.temf.core.TObject;
 import edu.uoc.som.temf.core.TResource;
 import edu.uoc.som.temf.core.exceptions.InvalidOptionsException;
 import edu.uoc.som.temf.core.impl.TObjectAdapterFactoryImpl;
@@ -170,18 +170,18 @@ public class HbaseTResourceImpl extends ResourceImpl implements TResource {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public EList<EObject> getContents(Date date) {
-		return ECollections.unmodifiableEList((EList<EObject>)(Object)ECollections.asEList(eStore().toArrayAt(date, DUMMY_ROOT_EOBJECT, ROOT_CONTENTS_ESTRUCTURALFEATURE)));
+	public EList<EObject> getContents(Instant instant) {
+		return ECollections.unmodifiableEList((EList<EObject>)(Object)ECollections.asEList(eStore().toArrayAt(instant, DUMMY_ROOT_EOBJECT, ROOT_CONTENTS_ESTRUCTURALFEATURE)));
 	}
 
-	public TreeIterator<EObject> getAllContents(final Date date) {
+	public TreeIterator<EObject> getAllContents(final Instant instant) {
 		return new AbstractTreeIterator<EObject>(this, false) {
 			private static final long serialVersionUID = 1L;
 
 			@Override
 			public Iterator<EObject> getChildren(Object object) {
-				return object == HbaseTResourceImpl.this ? HbaseTResourceImpl.this.getContents(date).iterator()
-						: ((TObject) object).eContents(date).iterator();
+				return object == HbaseTResourceImpl.this ? HbaseTResourceImpl.this.getContents(instant).iterator()
+						: ((TObject) object).eContents(instant).iterator();
 			}
 		};
 	}
@@ -234,7 +234,6 @@ public class HbaseTResourceImpl extends ResourceImpl implements TResource {
 	@Override
 	protected void finalize() throws Throwable {
 		unload();
-		super.finalize();
 	}
 
 	@Override

@@ -16,16 +16,15 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.text.MessageFormat;
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
@@ -46,11 +45,15 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.jboss.util.collection.SoftValueHashMap;
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 import edu.uoc.som.temf.Logger;
 import edu.uoc.som.temf.core.InternalTObject;
 import edu.uoc.som.temf.core.TObject;
+import edu.uoc.som.temf.core.exceptions.EClassNotFoundException;
 import edu.uoc.som.temf.core.impl.TObjectAdapterFactoryImpl;
 import edu.uoc.som.temf.estores.SearcheableResourceTStore;
 
@@ -73,8 +76,19 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 //	protected static final byte[] CONTAINER_QUALIFIER = Bytes.toBytes("container");
 //	protected static final byte[] CONTAINING_FEATURE_QUALIFIER = Bytes.toBytes("containingFeature");
 
-	@SuppressWarnings("unchecked")
-	protected Map<Object, InternalTObject> loadedEObjects = new SoftValueHashMap();
+	protected LoadingCache<String, InternalTObject> loadedEObjects = CacheBuilder.newBuilder().softValues().build(new CacheLoader<String, InternalTObject>() {
+		@Override
+		public InternalTObject load(String key) throws Exception {
+				EClass eClass = resolveInstanceOf(key);
+				if (eClass == null) {
+					throw new EClassNotFoundException(MessageFormat.format("Element {0} does not have an associated EClass", key));
+				}
+				EObject eObject = EcoreUtil.create(eClass);
+				InternalTObject tObject = TObjectAdapterFactoryImpl.getAdapter(eObject, InternalTObject.class);
+				tObject.tSetId(key);
+				return tObject;
+			}
+	});
 
 	protected Connection connection;
 
@@ -119,19 +133,19 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 	}
 
 	@Override
-	public Object getAt(Date date, InternalEObject object, EStructuralFeature feature, int index) {
+	public Object getAt(Instant instant, InternalEObject object, EStructuralFeature feature, int index) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
 		if (feature instanceof EAttribute) {
-			return getAt(date, tObject, (EAttribute) feature, index);
+			return getAt(instant, tObject, (EAttribute) feature, index);
 		} else if (feature instanceof EReference) {
-			return getAt(date, tObject, (EReference) feature, index);
+			return getAt(instant, tObject, (EReference) feature, index);
 		} else {
 			throw new IllegalArgumentException(feature.toString());
 		}
 	}
 
-	protected Object getAt(Date date, TObject object, EAttribute eAttribute, int index) {
-		Object value = getFromTable(null, date, object, eAttribute);
+	protected Object getAt(Instant instant, TObject object, EAttribute eAttribute, int index) {
+		Object value = getFromTable(instant, object, eAttribute);
 		if (!eAttribute.isMany()) {
 			return parseValue(eAttribute, (String) value);
 		} else {
@@ -140,8 +154,8 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 		}
 	}
 
-	protected Object getAt(Date date, TObject object, EReference eReference, int index) {
-		Object value = getFromTable(null, date, object, eReference);
+	protected Object getAt(Instant instant, TObject object, EReference eReference, int index) {
+		Object value = getFromTable(instant, object, eReference);
 		if (!eReference.isMany()) {
 			return getEObject((String) value);
 		} else {
@@ -151,38 +165,38 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 	}
 
 	@Override
-	public SortedMap<Date, Object> getAllBetween(Date startDate, Date endDate, InternalEObject object, EStructuralFeature feature, int index) {
+	public SortedMap<Instant, Object> getAllBetween(Instant startInstant, Instant endInstant, InternalEObject object, EStructuralFeature feature, int index) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
 		if (feature instanceof EAttribute) {
-			return getAllBetween(startDate, endDate, tObject, (EAttribute) feature, index);
+			return getAllBetween(startInstant, endInstant, tObject, (EAttribute) feature, index);
 		} else if (feature instanceof EReference) {
-			return getAllBetween(startDate, endDate, tObject, (EReference) feature, index);
+			return getAllBetween(startInstant, endInstant, tObject, (EReference) feature, index);
 		} else {
 			throw new IllegalArgumentException(feature.toString());
 		}
 	}
 	
-	protected SortedMap<Date, Object> getAllBetween(Date startDate, Date endDate, TObject object, EAttribute eAttribute, int index) {
-		SortedMap<Date, Object> result = new TreeMap<>();
-		SortedMap<Long, Object> all = getAllFromTable(startDate, endDate, object, eAttribute);
+	protected SortedMap<Instant, Object> getAllBetween(Instant startInstant, Instant endInstant, TObject object, EAttribute eAttribute, int index) {
+		SortedMap<Instant, Object> result = new TreeMap<>();
+		SortedMap<Long, Object> all = getAllFromTable(startInstant, endInstant, object, eAttribute);
 		for (Entry<Long, Object> entry : all.entrySet()) {
 			if (!eAttribute.isMany()) {
-				result.put(new Date(entry.getKey()), parseValue(eAttribute, (String) entry.getValue()));
+				result.put(Instant.ofEpochMilli(entry.getKey()), parseValue(eAttribute, (String) entry.getValue()));
 			} else {
-				result.put(new Date(entry.getKey()), parseValue(eAttribute, ((String[]) entry.getValue())[index]));
+				result.put(Instant.ofEpochMilli(entry.getKey()), parseValue(eAttribute, ((String[]) entry.getValue())[index]));
 			}
 		}
 		return result;
 	}
 	
-	protected SortedMap<Date, Object> getAllBetween(Date startDate, Date endDate, TObject object, EReference eReference, int index) {
-		SortedMap<Date, Object> result = new TreeMap<>();
-		SortedMap<Long, Object> all = getAllFromTable(startDate, endDate, object, eReference);
+	protected SortedMap<Instant, Object> getAllBetween(Instant startInstant, Instant endInstant, TObject object, EReference eReference, int index) {
+		SortedMap<Instant, Object> result = new TreeMap<>();
+		SortedMap<Long, Object> all = getAllFromTable(startInstant, endInstant, object, eReference);
 		for (Entry<Long, Object> entry : all.entrySet()) {
 			if (!eReference.isMany()) {
-				result.put(new Date(entry.getKey()), getEObject((String) entry.getValue()));
+				result.put(Instant.ofEpochMilli(entry.getKey()), getEObject((String) entry.getValue()));
 			} else {
-				result.put(new Date(entry.getKey()), getEObject(((String[]) entry.getValue())[index]));
+				result.put(Instant.ofEpochMilli(entry.getKey()), getEObject(((String[]) entry.getValue())[index]));
 			}
 		}
 		return result;
@@ -260,12 +274,12 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 	}
 
 	@Override
-	public boolean isSetAt(Date date, InternalEObject object, EStructuralFeature feature) {
+	public boolean isSetAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
 		try {
 			Get get = new Get(Bytes.toBytes(tObject.tId()));
-			if (date != null) {
-				get.setTimeRange(0, date.getTime() + 1);
+			if (instant != null) {
+				get.setTimeRange(0, instant.toEpochMilli() + 1);
 			}
 			Result result = table.get(get);
 			byte[] value = result.getValue(PROPERTY_FAMILY, Bytes.toBytes(feature.getName()));
@@ -399,8 +413,8 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 	}
 	
 	@Override
-	public boolean isEmptyAt(Date date, InternalEObject object, EStructuralFeature feature) {
-		return sizeAt(date, object, feature) == 0;
+	public boolean isEmptyAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
+		return sizeAt(instant, object, feature) == 0;
 	}
 
 	@Override
@@ -409,9 +423,9 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 	}
 	
 	@Override
-	public int sizeAt(Date date, InternalEObject object, EStructuralFeature feature) {
+	public int sizeAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		String[] array = (String[]) getFromTable(null, date, tObject, feature);
+		String[] array = (String[]) getFromTable(instant, tObject, feature);
 		return array != null ? array.length : 0;
 	}
 
@@ -421,8 +435,8 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 	}
 
 	@Override
-	public boolean containsAt(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
-		return indexOfAt(date, object, feature, value) != -1;
+	public boolean containsAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
+		return indexOfAt(instant, object, feature, value) != -1;
 	}
 	
 	@Override
@@ -431,9 +445,9 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 	}
 	
 	@Override
-	public int indexOfAt(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
+	public int indexOfAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		String[] array = (String[]) getFromTable(null, date, tObject, feature);
+		String[] array = (String[]) getFromTable(instant, tObject, feature);
 		if (array == null) {
 			return -1;
 		}
@@ -451,9 +465,9 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 	}
 	
 	@Override
-	public int lastIndexOfAt(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
+	public int lastIndexOfAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		String[] array = (String[]) getFromTable(null, date, tObject, feature);
+		String[] array = (String[]) getFromTable(instant, tObject, feature);
 		if (array == null) {
 			return -1;
 		}
@@ -484,11 +498,11 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 	}
 	
 	@Override
-	public Object[] toArrayAt(Date date, InternalEObject object, EStructuralFeature feature) {
-		int size = sizeAt(date, object, feature);
+	public Object[] toArrayAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
+		int size = sizeAt(instant, object, feature);
 		Object[] result = new Object[size];
 		for (int index = 0; index < size; index++) {
-			result[index] = getAt(date, object, feature, index);
+			result[index] = getAt(instant, object, feature, index);
 		}
 		return result;
 	}
@@ -500,8 +514,8 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T[] toArrayAt(Date date, InternalEObject object, EStructuralFeature feature, T[] array) {
-		int size = sizeAt(date, object, feature);
+	public <T> T[] toArrayAt(Instant instant, InternalEObject object, EStructuralFeature feature, T[] array) {
+		int size = sizeAt(instant, object, feature);
 		T[] result = null;
 		if (array.length < size) {
 			result = Arrays.copyOf(array, size);
@@ -509,23 +523,23 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 			result = array;
 		}
 		for (int index = 0; index < size; index++) {
-			result[index] = (T) getAt(date, object, feature, index);
+			result[index] = (T) getAt(instant, object, feature, index);
 		}
 		return result;
 	}
 	
 	@Override
-	public SortedMap<Date, Object[]> toArrayAllBetween(Date startDate, Date endDate, InternalEObject object, EStructuralFeature feature) {
+	public SortedMap<Instant, Object[]> toArrayAllBetween(Instant startInstant, Instant endInstant, InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
 
-		SortedMap<Date, Object[]> result = new TreeMap<>();
-		SortedMap<Long, Object> all = getAllFromTable(startDate, endDate, tObject, feature);
+		SortedMap<Instant, Object[]> result = new TreeMap<>();
+		SortedMap<Long, Object> all = getAllFromTable(startInstant, endInstant, tObject, feature);
 
 		for (Entry<Long, Object> entry : all.entrySet()) {
 			if (feature instanceof EAttribute) {
-				result.put(new Date(entry.getKey()), Arrays.asList((String[]) entry.getValue()).stream().map(v -> parseValue((EAttribute) feature, (String) v)).toArray());
+				result.put(Instant.ofEpochMilli(entry.getKey()), Arrays.asList((String[]) entry.getValue()).stream().map(v -> parseValue((EAttribute) feature, (String) v)).toArray());
 			} else if (feature instanceof EReference) {
-				result.put(new Date(entry.getKey()), Arrays.asList((String[]) entry.getValue()).stream().map(v -> getEObject((String) v)).toArray());
+				result.put(Instant.ofEpochMilli(entry.getKey()), Arrays.asList((String[]) entry.getValue()).stream().map(v -> getEObject((String) v)).toArray());
 			} else {
 				throw new IllegalArgumentException(feature.toString());
 			}
@@ -540,8 +554,8 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 	}
 	
 	@Override
-	public int hashCodeAt(Date date, InternalEObject object, EStructuralFeature feature) {
-		return toArrayAt(date, object, feature).hashCode();
+	public int hashCodeAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
+		return toArrayAt(instant, object, feature).hashCode();
 	}
 
 	@Override
@@ -550,13 +564,13 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 	}
 
 	@Override
-	public InternalEObject getContainerAt(Date date, InternalEObject object) {
+	public InternalEObject getContainerAt(Instant instant, InternalEObject object) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
 		
 		try {
 			Get get = new Get(Bytes.toBytes(tObject.tId()));
-			if (date != null) {
-				get.setTimeRange(0, date.getTime() + 1);
+			if (instant != null) {
+				get.setTimeRange(0, instant.toEpochMilli() + 1);
 			}
 			Result result = table.get(get);
 			String containerId = Bytes.toString(result.getValue(CONTAINMENT_FAMILY, CONTAINER_QUALIFIER));
@@ -580,13 +594,13 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 	}
 
 	@Override
-	public EStructuralFeature getContainingFeatureAt(Date date, InternalEObject object) {
+	public EStructuralFeature getContainingFeatureAt(Instant instant, InternalEObject object) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
 		
 		try {
 			Get get = new Get(Bytes.toBytes(tObject.tId()));
-			if (date != null) {
-				get.setTimeRange(0, date.getTime() + 1);
+			if (instant != null) {
+				get.setTimeRange(0, instant.toEpochMilli() + 1);
 			}
 			Result result = table.get(get);
 			String containerId = Bytes.toString(result.getValue(CONTAINMENT_FAMILY, CONTAINER_QUALIFIER));
@@ -616,23 +630,7 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 		if (StringUtils.isEmpty(id)) {
 			return null;
 		}
-		InternalTObject tObject = loadedEObjects.get(id);
-		if (tObject == null) {
-			EClass eClass = resolveInstanceOf(id);
-			if (eClass != null) {
-				EObject eObject = EcoreUtil.create(eClass);
-				if (eObject instanceof InternalTObject) {
-					tObject = (InternalTObject) eObject;
-				} else {
-					tObject = TObjectAdapterFactoryImpl.getAdapter(eObject, InternalTObject.class);
-				}
-				tObject.tSetId(id.toString());
-			} else {
-				Logger.log(Logger.SEVERITY_ERROR,
-						MessageFormat.format("Element {0} does not have an associated EClass", id));
-			}
-			loadedEObjects.put(id, tObject);
-		}
+		InternalTObject tObject = loadedEObjects.getUnchecked(id);
 		if (tObject.tResource() != getResource()) {
 			tObject.tSetResource(getResource());
 		}
@@ -704,30 +702,26 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 	 *         many-valued {@link EStructuralFeature}s
 	 */
 	protected Object getFromTable(TObject object, EStructuralFeature feature) {
-		return getFromTable(null, null, object, feature);
+		return getFromTable(null, object, feature);
 	}
 	
 	/**
 	 * Gets the latest value for {@link EStructuralFeature} {@code feature} from the
-	 * {@link Table} for the {@link TObject} {@code object} between
-	 * <code>startDate</code> and <code>endDate</code>. 
+	 * {@link Table} for the {@link TObject} {@code object} before <code>endInstant</code>. 
 	 * 
-	 * @param startDate
-	 *            the start moment, or <code>null</code> to indicate epoch time
-	 * @param endDate
-	 *            the end moment or <code>null</null> to indicate the latest possible time.
+	 * @param endInstant
+	 *            the end instant or <code>null</null> to indicate the latest possible time.
 	 * @param object
 	 * @param feature
 	 * @return The value of the {@code feature}. It can be a {@link String} for
 	 *         single-valued {@link EStructuralFeature}s or a {@link String}[] for
 	 *         many-valued {@link EStructuralFeature}s
 	 */
-	protected Object getFromTable(Date startDate, Date endDate, TObject object, EStructuralFeature feature) {
-		long start = startDate != null ? startDate.getTime() : 0;
-		long end = endDate != null && endDate.getTime() != Long.MAX_VALUE ? endDate.getTime() + 1 : Long.MAX_VALUE;
+	protected Object getFromTable(Instant endInstant, TObject object, EStructuralFeature feature) {
+		long end = endInstant != null && endInstant.toEpochMilli() != Long.MAX_VALUE ? endInstant.toEpochMilli() + 1 : Long.MAX_VALUE;
 		try {
 			Get get = new Get(Bytes.toBytes(object.tId()));
-			get.setTimeRange(start, end);
+			get.setTimeRange(0, end);
 			Result result = table.get(get);
 			byte[] bytes = result.getValue(PROPERTY_FAMILY, Bytes.toBytes(feature.getName()));
 			if (!feature.isMany()) {
@@ -746,12 +740,12 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 	/**
 	 * Gets all the values for {@link EStructuralFeature} {@code feature} from the
 	 * {@link Table} for the {@link TObject} {@code object} between
-	 * <code>startDate</code> and <code>endDate</code>.
+	 * <code>startInstant</code> and <code>endInstant</code>.
 	 * 
-	 * @param startDate
-	 *            the start moment, or <code>null</code> to indicate epoch time
-	 * @param endDate
-	 *            the end moment or <code>null</null> to indicate the latest
+	 * @param startInstant
+	 *            the start instant, or <code>null</code> to indicate epoch time
+	 * @param endInstant
+	 *            the end instant or <code>null</null> to indicate the latest
 	 *            possible time.
 	 * @param object
 	 * @param feature
@@ -759,9 +753,9 @@ public class DirectWriteHbaseResourceTStoreImpl implements SearcheableResourceTS
 	 *         single-valued {@link EStructuralFeature}s or a {@link String}[][] for
 	 *         many-valued {@link EStructuralFeature}s
 	 */
-	protected SortedMap<Long, Object> getAllFromTable(Date startDate, Date endDate, TObject object, EStructuralFeature feature) {
-		long start = startDate != null ? startDate.getTime() : 0;
-		long end = endDate != null && endDate.getTime() != Long.MAX_VALUE ? endDate.getTime() + 1 : Long.MAX_VALUE;
+	protected SortedMap<Long, Object> getAllFromTable(Instant startInstant, Instant endInstant, TObject object, EStructuralFeature feature) {
+		long start = startInstant != null ? startInstant.toEpochMilli() : 0;
+		long end = endInstant != null && endInstant.toEpochMilli() != Long.MAX_VALUE ? endInstant.toEpochMilli() + 1 : Long.MAX_VALUE;
 		SortedMap<Long, Object> resultMap = new TreeMap<>();
 		try {
 			// Get the curent value at 'start'

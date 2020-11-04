@@ -10,13 +10,14 @@
  *******************************************************************************/
 package edu.uoc.som.temf.core.impl;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 
 import edu.uoc.som.temf.TURI;
 import edu.uoc.som.temf.core.TResourceFactory;
 import edu.uoc.som.temf.hbase.impl.HbaseTResourceImpl;
+import edu.uoc.som.temf.mapdb.impl.MapDBTResourceImpl;
 
 public class TResourceFactoryImpl implements TResourceFactory {
 
@@ -24,6 +25,8 @@ public class TResourceFactoryImpl implements TResourceFactory {
 	public Resource createResource(URI uri) {
 		if (StringUtils.equals(TURI.TEMF_HBASE_SCHEME, uri.scheme())) {
 			return new HbaseTResourceImpl(uri);
+		} else if (StringUtils.equals(TURI.TEMF_MAPDB_SCHEME, uri.scheme())) {
+			return new MapDBTResourceImpl(uri);
 		} else {
 			return null;
 		}

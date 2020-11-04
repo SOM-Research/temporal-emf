@@ -10,6 +10,7 @@
  ******************************************************************************/
 package edu.uoc.som.temf;
 
+import java.io.File;
 import java.text.MessageFormat;
 import java.util.List;
 
@@ -18,9 +19,11 @@ import org.eclipse.emf.common.util.URI;
 public class TURI extends URI {
 
 	private static final String FILE_SCHEME = "file";
-
+	
 	public static final String TEMF_HBASE_SCHEME = "temf-hbase";
 	
+	public static final String TEMF_MAPDB_SCHEME = "temf-mapdb";
+
 	protected URI internalUri;
 	
 	protected TURI(int hashCode, URI internalUri) {
@@ -29,7 +32,9 @@ public class TURI extends URI {
 	}
 
 	public static URI createTURI(URI uri) {
-		if (TEMF_HBASE_SCHEME.equals(uri.scheme())) {
+		if (TEMF_MAPDB_SCHEME.equals(uri.scheme())) {
+			return new TURI(uri.hashCode(), uri);
+		} else if (TEMF_HBASE_SCHEME.equals(uri.scheme())) {
 			return new TURI(uri.hashCode(), uri);
 		} else {
 			throw new IllegalArgumentException(MessageFormat.format("Unsupported URI type {0}", uri.toString()));
@@ -47,6 +52,18 @@ public class TURI extends URI {
 		return new TURI(uri.hashCode(), uri);
 	}
 
+	public static URI createTMapDBURI(File file) {
+		URI fileUri = URI.createFileURI(file.getAbsolutePath());
+		URI uri = URI.createHierarchicalURI(
+				TURI.TEMF_MAPDB_SCHEME, 
+				fileUri.authority(),
+				fileUri.device(),
+				fileUri.segments(),
+				fileUri.query(),
+				fileUri.fragment());
+		return new TURI(uri.hashCode(), uri);
+	}
+	
 	@Override
 	public boolean isArchive() {
 		return internalUri.isArchive();
