@@ -10,7 +10,7 @@
  *******************************************************************************/
 package edu.uoc.som.temf.core;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.SortedMap;
 
 import org.eclipse.emf.common.util.EList;
@@ -21,10 +21,12 @@ public interface TObject extends EObject {
 
 	public abstract String tId();
 	
-	EList<EObject> eContents(Date date);
+	EList<EObject> eContents(Instant instant);
 	
-	Object eGetAt(Date date, EStructuralFeature feature);
+	Object eGetAt(Instant instant, EStructuralFeature feature);
 
-	SortedMap<Date, Object> eGetAllBetween(Date startDate, Date endDate, EStructuralFeature feature);
+	boolean eIsSetAt(Instant instant, EStructuralFeature feature);
+	
+	SortedMap<Instant, Object> eGetAllBetween(Instant start, Instant end, EStructuralFeature feature);
 
 }

@@ -10,9 +10,9 @@
  *******************************************************************************/
 package edu.uoc.som.temf.core.impl;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -30,8 +30,8 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.Resource.Internal;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 
-import edu.uoc.som.temf.core.TObject;
 import edu.uoc.som.temf.core.InternalTObject;
+import edu.uoc.som.temf.core.TObject;
 import edu.uoc.som.temf.core.TResource;
 import edu.uoc.som.temf.estores.TStore;
 import edu.uoc.som.temf.estores.impl.OwnedTransientTStoreImpl;
@@ -176,14 +176,14 @@ public class TObjectImpl extends MinimalEStoreEObjectImpl implements InternalTOb
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public EList<EObject> eContents(Date date) {
+	public EList<EObject> eContents(Instant instant) {
 		EStructuralFeature[] eStructuralFeatures = ((EClassImpl.FeatureSubsetSupplier) this.eClass()
 				.getEAllStructuralFeatures()).containments();
 
 		EList<EObject> contents = ECollections.newBasicEList();
 		if (eStructuralFeatures != null) {
 			for (EStructuralFeature feature : eStructuralFeatures) {
-				contents.addAll((Collection<? extends EObject>) eGetAt(date, feature));
+				contents.addAll((Collection<? extends EObject>) eGetAt(instant, feature));
 			}
 		}
 		return ECollections.unmodifiableEList(contents);
@@ -205,14 +205,18 @@ public class TObjectImpl extends MinimalEStoreEObjectImpl implements InternalTOb
 	}
 
 	@Override
-	public Object eGetAt(Date date, EStructuralFeature feature) {
-		return dynamicGetAt(date, eDynamicFeatureID(feature));
+	public Object eGetAt(Instant instant, EStructuralFeature feature) {
+		return dynamicGetAt(instant, eDynamicFeatureID(feature));
 	}
 	
+	@Override
+	public boolean eIsSetAt(Instant instant, EStructuralFeature feature) {
+		return dynamicIsSetAt(instant, eDynamicFeatureID(feature));
+	}
 	
 	@Override
-	public SortedMap<Date, Object> eGetAllBetween(Date startDate, Date endDate, EStructuralFeature feature) {
-		return dynamicGetAllBetween(startDate, endDate, eDynamicFeatureID(feature));
+	public SortedMap<Instant, Object> eGetAllBetween(Instant start, Instant end, EStructuralFeature feature) {
+		return dynamicGetAllBetween(start, end, eDynamicFeatureID(feature));
 	}
 	
 	@Override
@@ -225,25 +229,30 @@ public class TObjectImpl extends MinimalEStoreEObjectImpl implements InternalTOb
 		}
 	}
 
-	public Object dynamicGetAt(Date date, int dynamicFeatureID) {
+	public Object dynamicGetAt(Instant instant, int dynamicFeatureID) {
 		EStructuralFeature feature = eDynamicFeature(dynamicFeatureID);
 		if (feature.isMany()) {
-			return ECollections.unmodifiableEList(ECollections.asEList(eStore().toArrayAt(date, this, feature)));
+			return ECollections.unmodifiableEList(ECollections.asEList(eStore().toArrayAt(instant, this, feature)));
 		} else {
-			return eStore().getAt(date, this, feature, EStore.NO_INDEX);
+			return eStore().getAt(instant, this, feature, EStore.NO_INDEX);
 		}
 	}
 	
-	public SortedMap<Date, Object> dynamicGetAllBetween(Date startDate, Date endDate, int dynamicFeatureID) {
+	public boolean dynamicIsSetAt(Instant instant, int dynamicFeatureID) {
 		EStructuralFeature feature = eDynamicFeature(dynamicFeatureID);
-		SortedMap<Date, Object> result = new TreeMap<>();
+		return eStore().isSetAt(instant, this, feature);
+	}
+	
+	public SortedMap<Instant, Object> dynamicGetAllBetween(Instant start, Instant end, int dynamicFeatureID) {
+		EStructuralFeature feature = eDynamicFeature(dynamicFeatureID);
+		SortedMap<Instant, Object> result = new TreeMap<>();
 		if (feature.isMany()) {
-			SortedMap<Date, Object[]> all = eStore().toArrayAllBetween(startDate, endDate, this, feature);
-			for (Entry<Date, Object[]> entry : all.entrySet()) {
+			SortedMap<Instant, Object[]> all = eStore().toArrayAllBetween(start, end, this, feature);
+			for (Entry<Instant, Object[]> entry : all.entrySet()) {
 				result.put(entry.getKey(), ECollections.unmodifiableEList(ECollections.asEList(entry.getValue())));
 			}
 		} else {
-			SortedMap<Date, Object> all = eStore().getAllBetween(startDate, endDate, this, feature, EStore.NO_INDEX);
+			SortedMap<Instant, Object> all = eStore().getAllBetween(start, end, this, feature, EStore.NO_INDEX);
 			result.putAll(all);
 		}
 		return Collections.unmodifiableSortedMap(result);

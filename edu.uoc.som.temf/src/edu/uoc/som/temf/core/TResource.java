@@ -10,7 +10,7 @@
  *******************************************************************************/
 package edu.uoc.som.temf.core;
 
-import java.util.Date;
+import java.time.Instant;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.TreeIterator;
@@ -23,8 +23,8 @@ public interface TResource extends Resource, Resource.Internal {
 
 	public abstract TStore eStore();
 	
-	public abstract EList<EObject> getContents(Date date);
+	public abstract EList<EObject> getContents(Instant instant);
 	
-	public abstract TreeIterator<EObject> getAllContents(Date date);
+	public abstract TreeIterator<EObject> getAllContents(Instant instant);
 	
 }

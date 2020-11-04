@@ -11,7 +11,7 @@
 package edu.uoc.som.temf.estores.impl;
 
 import java.text.MessageFormat;
-import java.util.Date;
+import java.time.Instant;
 
 import org.eclipse.core.runtime.ILog;
 import org.eclipse.emf.ecore.EClass;
@@ -20,8 +20,8 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.resource.Resource;
 
-import edu.uoc.som.temf.TEmfPlugin;
 import edu.uoc.som.temf.Logger;
+import edu.uoc.som.temf.TEmfPlugin;
 import edu.uoc.som.temf.estores.SearcheableResourceEStore;
 import edu.uoc.som.temf.estores.SearcheableResourceTStore;
 
@@ -45,9 +45,9 @@ public class LoggingDelegatedResourceTStoreImpl extends DelegatedResourceTStoreI
 	}
 	
 	@Override
-	public Object getAt(Date date, InternalEObject object, EStructuralFeature feature, int index) {
-		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called get for {0}.{1}[{2}] @ {3}", object, feature.getName(), index, date));
-		return super.getAt(date, object, feature, index);
+	public Object getAt(Instant instant, InternalEObject object, EStructuralFeature feature, int index) {
+		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called get for {0}.{1}[{2}] @ {3}", object, feature.getName(), index, instant));
+		return super.getAt(instant, object, feature, index);
 	}
 
 	@Override
@@ -63,9 +63,9 @@ public class LoggingDelegatedResourceTStoreImpl extends DelegatedResourceTStoreI
 	}
 	
 	@Override
-	public boolean isSetAt(Date date, InternalEObject object, EStructuralFeature feature) {
-		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called isSet for {0}.{1} @ {2}", object, feature.getName(), date));
-		return super.isSetAt(date, object, feature);
+	public boolean isSetAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
+		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called isSet for {0}.{1} @ {2}", object, feature.getName(), instant));
+		return super.isSetAt(instant, object, feature);
 	}
 
 	@Override
@@ -81,9 +81,9 @@ public class LoggingDelegatedResourceTStoreImpl extends DelegatedResourceTStoreI
 	}
 
 	@Override
-	public boolean isEmptyAt(Date date, InternalEObject object, EStructuralFeature feature) {
-		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called isEmtpy for {0}.{1} @ {2}", object, feature.getName(), date));
-		return super.isEmptyAt(date, object, feature);
+	public boolean isEmptyAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
+		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called isEmtpy for {0}.{1} @ {2}", object, feature.getName(), instant));
+		return super.isEmptyAt(instant, object, feature);
 	}
 	
 	@Override
@@ -93,9 +93,9 @@ public class LoggingDelegatedResourceTStoreImpl extends DelegatedResourceTStoreI
 	}
 
 	@Override
-	public int sizeAt(Date date, InternalEObject object, EStructuralFeature feature) {
-		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called size for {0}.{1} @ {2}", object, feature.getName(), date));
-		return super.sizeAt(date, object, feature);
+	public int sizeAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
+		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called size for {0}.{1} @ {2}", object, feature.getName(), instant));
+		return super.sizeAt(instant, object, feature);
 	}
 	
 	@Override
@@ -105,9 +105,9 @@ public class LoggingDelegatedResourceTStoreImpl extends DelegatedResourceTStoreI
 	}
 	
 	@Override
-	public boolean containsAt(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
-		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called contains for {0}.{1} with value {2} @ {3}", object, feature.getName(), value, date));
-		return super.containsAt(date, object, feature, value);
+	public boolean containsAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
+		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called contains for {0}.{1} with value {2} @ {3}", object, feature.getName(), value, instant));
+		return super.containsAt(instant, object, feature, value);
 	}
 
 	@Override
@@ -117,9 +117,9 @@ public class LoggingDelegatedResourceTStoreImpl extends DelegatedResourceTStoreI
 	}
 	
 	@Override
-	public int indexOfAt(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
-		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called indexOf for {0}.{1} with value {2} @ {3}", object, feature.getName(), value, date));
-		return super.indexOfAt(date, object, feature, value);
+	public int indexOfAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
+		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called indexOf for {0}.{1} with value {2} @ {3}", object, feature.getName(), value, instant));
+		return super.indexOfAt(instant, object, feature, value);
 	}
 
 	@Override
@@ -129,9 +129,9 @@ public class LoggingDelegatedResourceTStoreImpl extends DelegatedResourceTStoreI
 	}
 	
 	@Override
-	public int lastIndexOfAt(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
-		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called lastIndexOf for {0}.{1} with value {2} @ {3}", object, feature.getName(), value, date));
-		return super.lastIndexOfAt(date, object, feature, value);
+	public int lastIndexOfAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
+		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called lastIndexOf for {0}.{1} with value {2} @ {3}", object, feature.getName(), value, instant));
+		return super.lastIndexOfAt(instant, object, feature, value);
 	}
 
 	@Override
@@ -166,9 +166,9 @@ public class LoggingDelegatedResourceTStoreImpl extends DelegatedResourceTStoreI
 	}
 
 	@Override
-	public Object[] toArrayAt(Date date, InternalEObject object, EStructuralFeature feature) {
-		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called toArray for {0}.{1} @ {2}", object, feature.getName(), date));
-		return super.toArrayAt(date, object, feature);
+	public Object[] toArrayAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
+		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called toArray for {0}.{1} @ {2}", object, feature.getName(), instant));
+		return super.toArrayAt(instant, object, feature);
 	}
 	
 	@Override
@@ -178,9 +178,9 @@ public class LoggingDelegatedResourceTStoreImpl extends DelegatedResourceTStoreI
 	}
 
 	@Override
-	public <T> T[] toArrayAt(Date date, InternalEObject object, EStructuralFeature feature, T[] array) {
-		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called toArray for {0}.{1} @ {2}", object, feature.getName(), date));
-		return super.toArrayAt(date, object, feature, array);
+	public <T> T[] toArrayAt(Instant instant, InternalEObject object, EStructuralFeature feature, T[] array) {
+		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called toArray for {0}.{1} @ {2}", object, feature.getName(), instant));
+		return super.toArrayAt(instant, object, feature, array);
 	}
 	
 	@Override
@@ -190,9 +190,9 @@ public class LoggingDelegatedResourceTStoreImpl extends DelegatedResourceTStoreI
 	}
 	
 	@Override
-	public int hashCodeAt(Date date, InternalEObject object, EStructuralFeature feature) {
-		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called hashCode for {0}.{1} @ {2}", object, feature.getName(), date));
-		return super.hashCodeAt(date, object, feature);
+	public int hashCodeAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
+		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called hashCode for {0}.{1} @ {2}", object, feature.getName(), instant));
+		return super.hashCodeAt(instant, object, feature);
 	}
 
 	@Override
@@ -202,9 +202,9 @@ public class LoggingDelegatedResourceTStoreImpl extends DelegatedResourceTStoreI
 	}
 	
 	@Override
-	public InternalEObject getContainerAt(Date date, InternalEObject object) {
-		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called getContainer for {0} @ {1}", object, date));
-		return super.getContainerAt(date, object);
+	public InternalEObject getContainerAt(Instant instant, InternalEObject object) {
+		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called getContainer for {0} @ {1}", object, instant));
+		return super.getContainerAt(instant, object);
 	}
 
 	@Override
@@ -214,9 +214,9 @@ public class LoggingDelegatedResourceTStoreImpl extends DelegatedResourceTStoreI
 	}
 	
 	@Override
-	public EStructuralFeature getContainingFeatureAt(Date date, InternalEObject object) {
-		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called getContainingFeature for {0} @ {1}", object, date));
-		return super.getContainingFeatureAt(date, object);
+	public EStructuralFeature getContainingFeatureAt(Instant instant, InternalEObject object) {
+		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called getContainingFeature for {0} @ {1}", object, instant));
+		return super.getContainingFeatureAt(instant, object);
 	}
 
 	@Override

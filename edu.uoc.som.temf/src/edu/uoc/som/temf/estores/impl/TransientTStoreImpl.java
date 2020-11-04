@@ -10,9 +10,9 @@
  *******************************************************************************/
 package edu.uoc.som.temf.estores.impl;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,12 +111,12 @@ public class TransientTStoreImpl implements TStore {
 	}
 
 	@Override
-	public Object getAt(Date date, InternalEObject object, EStructuralFeature feature, int index) {
+	public Object getAt(Instant instant, InternalEObject object, EStructuralFeature feature, int index) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public SortedMap<Date, Object> getAllBetween(Date startDate, Date endDate, InternalEObject object, EStructuralFeature feature, int index) {
+	public SortedMap<Instant, Object> getAllBetween(Instant startInstant, Instant endInstant, InternalEObject object, EStructuralFeature feature, int index) {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -178,7 +178,7 @@ public class TransientTStoreImpl implements TStore {
 	}
 
 	@Override
-	public boolean isSetAt(Date date, InternalEObject object, EStructuralFeature feature) {
+	public boolean isSetAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -200,7 +200,7 @@ public class TransientTStoreImpl implements TStore {
 	}
 
 	@Override
-	public int sizeAt(Date date, InternalEObject object, EStructuralFeature feature) {
+	public int sizeAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -212,7 +212,7 @@ public class TransientTStoreImpl implements TStore {
 	}
 
 	@Override
-	public int indexOfAt(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
+	public int indexOfAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -224,7 +224,7 @@ public class TransientTStoreImpl implements TStore {
 	}
 
 	@Override
-	public int lastIndexOfAt(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
+	public int lastIndexOfAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -236,12 +236,12 @@ public class TransientTStoreImpl implements TStore {
 	}
 
 	@Override
-	public Object[] toArrayAt(Date date, InternalEObject object, EStructuralFeature feature) {
+	public Object[] toArrayAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		throw new UnsupportedOperationException();
 	}
 	
 	@Override
-	public SortedMap<Date, Object[]> toArrayAllBetween(Date startDate, Date endDate, InternalEObject object, EStructuralFeature feature) {
+	public SortedMap<Instant, Object[]> toArrayAllBetween(Instant startInstant, Instant endInstant, InternalEObject object, EStructuralFeature feature) {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -253,7 +253,7 @@ public class TransientTStoreImpl implements TStore {
 	}
 
 	@Override
-	public <T> T[] toArrayAt(Date date, InternalEObject object, EStructuralFeature feature, T[] array) {
+	public <T> T[] toArrayAt(Instant instant, InternalEObject object, EStructuralFeature feature, T[] array) {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -265,7 +265,7 @@ public class TransientTStoreImpl implements TStore {
 	}
 
 	@Override
-	public boolean isEmptyAt(Date date, InternalEObject object, EStructuralFeature feature) {
+	public boolean isEmptyAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -277,7 +277,7 @@ public class TransientTStoreImpl implements TStore {
 	}
 
 	@Override
-	public boolean containsAt(Date date, InternalEObject object, EStructuralFeature feature, Object value) {
+	public boolean containsAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -288,7 +288,7 @@ public class TransientTStoreImpl implements TStore {
 	}
 
 	@Override
-	public int hashCodeAt(Date date, InternalEObject object, EStructuralFeature feature) {
+	public int hashCodeAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -298,7 +298,7 @@ public class TransientTStoreImpl implements TStore {
 	}
 
 	@Override
-	public InternalEObject getContainerAt(Date date, InternalEObject object) {
+	public InternalEObject getContainerAt(Instant instant, InternalEObject object) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -309,7 +309,7 @@ public class TransientTStoreImpl implements TStore {
 	}
 
 	@Override
-	public EStructuralFeature getContainingFeatureAt(Date date, InternalEObject object) {
+	public EStructuralFeature getContainingFeatureAt(Instant instant, InternalEObject object) {
 		throw new UnsupportedOperationException();
 	}
 
