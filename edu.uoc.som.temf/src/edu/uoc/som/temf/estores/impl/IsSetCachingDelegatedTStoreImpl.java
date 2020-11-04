@@ -10,11 +10,12 @@
  *******************************************************************************/
 package edu.uoc.som.temf.estores.impl;
 
-import java.util.Map;
-
-import org.apache.commons.collections4.map.LRUMap;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 import edu.uoc.som.temf.estores.SearcheableResourceEStore;
 import edu.uoc.som.temf.estores.SearcheableResourceTStore;
@@ -77,7 +78,7 @@ public class IsSetCachingDelegatedTStoreImpl extends DelegatedResourceTStoreImpl
 	
 	protected static final int DEFAULT_IS_SET_CACHE_SIZE = 10000;
 	
-	protected Map<MapKey, Boolean> isSetCache;
+	protected LoadingCache<MapKey, Boolean> isSetCache;
 	
 	public IsSetCachingDelegatedTStoreImpl(SearcheableResourceTStore eStore) {
 		this(eStore, DEFAULT_IS_SET_CACHE_SIZE);
@@ -85,7 +86,12 @@ public class IsSetCachingDelegatedTStoreImpl extends DelegatedResourceTStoreImpl
 
 	public IsSetCachingDelegatedTStoreImpl(SearcheableResourceTStore eStore, int sizeCacheSize) {
 		super(eStore);
-		this.isSetCache = new LRUMap<>(sizeCacheSize);
+		this.isSetCache = CacheBuilder.newBuilder().maximumSize(sizeCacheSize).build(new CacheLoader<MapKey, Boolean>() {
+			@Override
+			public Boolean load(MapKey key) throws Exception {
+				return IsSetCachingDelegatedTStoreImpl.super.isSet(key.object, key.feature);
+			}
+		});
 	}
 	
 	@Override
@@ -96,15 +102,7 @@ public class IsSetCachingDelegatedTStoreImpl extends DelegatedResourceTStoreImpl
 
 	@Override
 	public boolean isSet(InternalEObject object, EStructuralFeature feature) {
-		MapKey key = new MapKey(object, feature);
-		Boolean isSet = isSetCache.get(key);
-		if (isSet != null) {
-			return isSet;
-		} else {
-			isSet = eStore.isSet(object, feature);
-			isSetCache.put(key, isSet);
-			return isSet;
-		}
+		return isSetCache.getUnchecked(new MapKey(object, feature));
 	}
 
 	@Override
@@ -115,9 +113,8 @@ public class IsSetCachingDelegatedTStoreImpl extends DelegatedResourceTStoreImpl
 
 	@Override
 	public Object remove(InternalEObject object, EStructuralFeature feature, int index) {
-		isSetCache.remove(new MapKey(object, feature)); // Remove, next queries will update the right cached value
-		Object returnValue = super.remove(object, feature, index);
-		return returnValue;
+		isSetCache.invalidate(new MapKey(object, feature)); // Remove, next queries will update the right cached value
+		return super.remove(object, feature, index);
 	}
 	
 	@Override
@@ -157,6 +154,4 @@ public class IsSetCachingDelegatedTStoreImpl extends DelegatedResourceTStoreImpl
 		}
 		return returnValue;
 	}
-	
-	// TODO: Other methods may be added...
 }

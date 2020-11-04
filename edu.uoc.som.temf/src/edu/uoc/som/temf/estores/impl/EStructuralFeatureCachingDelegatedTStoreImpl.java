@@ -10,12 +10,13 @@
  *******************************************************************************/
 package edu.uoc.som.temf.estores.impl;
 
-import java.util.Map;
-
-import org.apache.commons.collections4.map.LRUMap;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.InternalEObject.EStore;
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 import edu.uoc.som.temf.estores.SearcheableResourceEStore;
 import edu.uoc.som.temf.estores.SearcheableResourceTStore;
@@ -84,7 +85,7 @@ public class EStructuralFeatureCachingDelegatedTStoreImpl extends DelegatedResou
 	
 	protected static final int DEFAULT_CACHE_SIZE = 10000;
 	
-	protected Map<MapKey, Object> cache;
+	protected LoadingCache<MapKey, Object> cache;
 	
 	public EStructuralFeatureCachingDelegatedTStoreImpl(SearcheableResourceTStore eStore) {
 		this(eStore, DEFAULT_CACHE_SIZE);
@@ -92,17 +93,17 @@ public class EStructuralFeatureCachingDelegatedTStoreImpl extends DelegatedResou
 
 	public EStructuralFeatureCachingDelegatedTStoreImpl(SearcheableResourceTStore eStore, int cacheSize) {
 		super(eStore);
-		this.cache = new LRUMap<>(cacheSize);
+		this.cache = CacheBuilder.newBuilder().maximumSize(cacheSize).build(new CacheLoader<MapKey, Object> () {
+			@Override
+			public Object load(MapKey key) throws Exception {
+				return EStructuralFeatureCachingDelegatedTStoreImpl.super.get(key.object, key.feature, key.index);
+			}
+		});
 	}
 	
 	@Override
 	public Object get(InternalEObject object, EStructuralFeature feature, int index) {
-		Object returnValue = cache.get(new MapKey(object, feature, index));
-		if (returnValue == null) { 
-			returnValue = super.get(object, feature, index);
-			cache.put(new MapKey(object, feature, index), returnValue);
-		}
-		return returnValue;
+		return cache.getUnchecked(new MapKey(object, feature, index));
 	}
 	
 	@Override
@@ -118,7 +119,7 @@ public class EStructuralFeatureCachingDelegatedTStoreImpl extends DelegatedResou
 		cache.put(new MapKey(object, feature, index), value);
 		int size = size(object, feature);
 		for (int i = index + 1; i < size; i++) {
-			cache.remove(new MapKey(object, feature, i));
+			cache.invalidate(new MapKey(object, feature, i));
 		}
 	}
 	
@@ -127,7 +128,7 @@ public class EStructuralFeatureCachingDelegatedTStoreImpl extends DelegatedResou
 		int size = size(object, feature);
 		Object returnValue = super.remove(object, feature, index);
 		for (int i = index; i < size; i++) {
-			cache.remove(new MapKey(object, feature, i));
+			cache.invalidate(new MapKey(object, feature, i));
 		}
 		return returnValue;
 	}
@@ -137,7 +138,7 @@ public class EStructuralFeatureCachingDelegatedTStoreImpl extends DelegatedResou
 		int size = size(object, feature);
 		super.clear(object, feature);
 		for (int i = 0; i < size; i++) {
-			cache.remove(new MapKey(object, feature, i));
+			cache.invalidate(new MapKey(object, feature, i));
 		}
 	}
 	
@@ -146,7 +147,7 @@ public class EStructuralFeatureCachingDelegatedTStoreImpl extends DelegatedResou
 		Object returnValue = super.move(object, feature, targetIndex, sourceIndex);
 		int size = size(object, feature);
 		for (int i = Math.min(sourceIndex, targetIndex); i < size; i++) {
-			cache.remove(new MapKey(object, feature, i));
+			cache.invalidate(new MapKey(object, feature, i));
 		}
 		cache.put(new MapKey(object, feature, targetIndex), returnValue);
 		return returnValue;
@@ -155,12 +156,12 @@ public class EStructuralFeatureCachingDelegatedTStoreImpl extends DelegatedResou
 	@Override
 	public void unset(InternalEObject object, EStructuralFeature feature) {
 		if (!feature.isMany()) {
-			cache.remove(new MapKey(object, feature, EStore.NO_INDEX));
+			cache.invalidate(new MapKey(object, feature, EStore.NO_INDEX));
 			super.unset(object, feature);
 		} else {
 			int size = size(object, feature);
 			for (int i = 0; i < size; i++) {
-				cache.remove(new MapKey(object, feature, i));
+				cache.invalidate(new MapKey(object, feature, i));
 			}
 			super.unset(object, feature);
 		}

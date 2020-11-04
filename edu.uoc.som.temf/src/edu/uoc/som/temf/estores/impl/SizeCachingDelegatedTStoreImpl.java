@@ -10,11 +10,12 @@
  *******************************************************************************/
 package edu.uoc.som.temf.estores.impl;
 
-import java.util.Map;
-
-import org.apache.commons.collections4.map.LRUMap;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 import edu.uoc.som.temf.estores.SearcheableResourceEStore;
 import edu.uoc.som.temf.estores.SearcheableResourceTStore;
@@ -77,7 +78,7 @@ public class SizeCachingDelegatedTStoreImpl extends DelegatedResourceTStoreImpl 
 	
 	protected static final int DEFAULT_SIZE_CACHE_SIZE = 10000;
 	
-	protected Map<MapKey, Integer> sizeCache;
+	protected LoadingCache<MapKey, Integer> sizeCache;
 	
 	
 	public SizeCachingDelegatedTStoreImpl(SearcheableResourceTStore eStore) {
@@ -86,7 +87,12 @@ public class SizeCachingDelegatedTStoreImpl extends DelegatedResourceTStoreImpl 
 
 	public SizeCachingDelegatedTStoreImpl(SearcheableResourceTStore eStore, int sizeCacheSize) {
 		super(eStore);
-		this.sizeCache = new LRUMap<>(sizeCacheSize);
+		this.sizeCache = CacheBuilder.newBuilder().maximumSize(sizeCacheSize).build(new CacheLoader<MapKey, Integer>() {
+			@Override
+			public Integer load(MapKey key) throws Exception {
+				return SizeCachingDelegatedTStoreImpl.super.size(key.object, key.feature);
+			}
+		});
 	}
 	
 	@Override
@@ -97,7 +103,7 @@ public class SizeCachingDelegatedTStoreImpl extends DelegatedResourceTStoreImpl 
 
 	@Override
 	public boolean isEmpty(InternalEObject object, EStructuralFeature feature) {
-		Integer size = sizeCache.get(new MapKey(object, feature));
+		Integer size = sizeCache.getUnchecked(new MapKey(object, feature));
 		if (size != null) {
 			return size == 0;
 		} else {
@@ -107,18 +113,12 @@ public class SizeCachingDelegatedTStoreImpl extends DelegatedResourceTStoreImpl 
 
 	@Override
 	public int size(InternalEObject object, EStructuralFeature feature) {
-		Integer size = sizeCache.get(new MapKey(object, feature));
-		if (size == null) {
-			size = super.size(object, feature); 
-			sizeCache.put(new MapKey(object, feature), size);
-		}  else {
-		}
-		return size;
+		return sizeCache.getUnchecked(new MapKey(object, feature));
 	}
 
 	@Override
 	public void add(InternalEObject object, EStructuralFeature feature, int index, Object value) {
-		Integer size = sizeCache.get(new MapKey(object, feature));
+		Integer size = sizeCache.getUnchecked(new MapKey(object, feature));
 		if (size != null) {
 			sizeCache.put(new MapKey(object, feature), size + 1); 
 		} 
@@ -127,7 +127,7 @@ public class SizeCachingDelegatedTStoreImpl extends DelegatedResourceTStoreImpl 
 
 	@Override
 	public Object remove(InternalEObject object, EStructuralFeature feature, int index) {
-		Integer size = sizeCache.get(new MapKey(object, feature));
+		Integer size = sizeCache.getUnchecked(new MapKey(object, feature));
 		if (size != null) {
 			sizeCache.put(new MapKey(object, feature), size - 1); 
 		} 
