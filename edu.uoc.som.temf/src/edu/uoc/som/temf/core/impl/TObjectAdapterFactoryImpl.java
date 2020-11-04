@@ -10,18 +10,14 @@
  *******************************************************************************/
 package edu.uoc.som.temf.core.impl;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import org.apache.commons.lang.ClassUtils;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.InternalEObject;
 
 import edu.uoc.som.temf.core.InternalTObject;
 import edu.uoc.som.temf.core.TObject;
-import net.sf.cglib.proxy.Enhancer;
 
 public class TObjectAdapterFactoryImpl {
 
@@ -48,20 +44,19 @@ public class TObjectAdapterFactoryImpl {
 				}
 			}
 			{
-				// Compute the interfaces that the proxy has to implement
-				// These are the current interfaces + TObject
-				List<Class<?>> interfaces = new ArrayList<>();
-				interfaces.addAll(ClassUtils.getAllInterfaces(adaptableObject.getClass()));
-				interfaces.add(InternalTObject.class);
-				// Create the proxy
-				Enhancer enhancer = new Enhancer();
-				enhancer.setClassLoader(TObjectAdapterFactoryImpl.class.getClassLoader());
-				enhancer.setSuperclass(adaptableObject.getClass());
-				enhancer.setInterfaces(interfaces.toArray(new Class[] {}));
-				enhancer.setCallback(new TObjectProxyHandlerImpl((InternalEObject) adaptableObject));
-				T adapter = (T) enhancer.create();
-				adaptedObjects.put((InternalEObject) adaptableObject, (InternalTObject)  adapter);
-				return adapter;
+//				// Compute the interfaces that the proxy has to implement
+//				// These are the current interfaces + TObject
+//				List<Class<?>> interfaces = new ArrayList<>();
+//				interfaces.addAll(ClassUtils.getAllInterfaces(adaptableObject.getClass()));
+//				interfaces.add(InternalTObject.class);
+//				// Create the proxy
+//				Enhancer enhancer = new Enhancer();
+//				enhancer.setClassLoader(TObjectAdapterFactoryImpl.class.getClassLoader());
+//				enhancer.setSuperclass(adaptableObject.getClass());
+//				enhancer.setInterfaces(interfaces.toArray(new Class[] {}));
+//				enhancer.setCallback(new TObjectProxyHandlerImpl((InternalEObject) adaptableObject));
+//				T adapter = (T) enhancer.create();
+				throw new UnsupportedOperationException("Not implemented yet: code to be migrated to ByteBuddy");
 			}
 		}
 		return null;
