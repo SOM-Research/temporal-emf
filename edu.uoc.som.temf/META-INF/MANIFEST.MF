@@ -20,8 +20,6 @@ Export-Package: edu.uoc.som.temf,
  edu.uoc.som.temf.core.impl,
  edu.uoc.som.temf.estores,
  edu.uoc.som.temf.estores.impl,
- edu.uoc.som.temf.hbase.estores.impl,
- edu.uoc.som.temf.hbase.impl,
  edu.uoc.som.temf.mapdb.estores.impl,
  edu.uoc.som.temf.mapdb.impl
 Bundle-ClassPath: .

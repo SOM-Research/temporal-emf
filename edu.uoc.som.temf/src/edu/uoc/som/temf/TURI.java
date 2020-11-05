@@ -20,9 +20,7 @@ public class TURI extends URI {
 
 	private static final String FILE_SCHEME = "file";
 	
-	public static final String TEMF_HBASE_SCHEME = "temf-hbase";
-	
-	public static final String TEMF_MAPDB_SCHEME = "temf-mapdb";
+	public static final String TEMF_MAP_SCHEME = "temf-map";
 
 	protected URI internalUri;
 	
@@ -32,30 +30,17 @@ public class TURI extends URI {
 	}
 
 	public static URI createTURI(URI uri) {
-		if (TEMF_MAPDB_SCHEME.equals(uri.scheme())) {
-			return new TURI(uri.hashCode(), uri);
-		} else if (TEMF_HBASE_SCHEME.equals(uri.scheme())) {
+		if (TEMF_MAP_SCHEME.equals(uri.scheme())) {
 			return new TURI(uri.hashCode(), uri);
 		} else {
 			throw new IllegalArgumentException(MessageFormat.format("Unsupported URI type {0}", uri.toString()));
 		}
 	}
 	
-	public static URI createTHBaseURI(String authority, String table) {
-		URI uri = URI.createHierarchicalURI(
-				TURI.TEMF_HBASE_SCHEME, 
-				authority,
-				null,
-				new String[] { table },
-				null,
-				null);
-		return new TURI(uri.hashCode(), uri);
-	}
-
-	public static URI createTMapDBURI(File file) {
+	public static URI createTMapURI(File file) {
 		URI fileUri = URI.createFileURI(file.getAbsolutePath());
 		URI uri = URI.createHierarchicalURI(
-				TURI.TEMF_MAPDB_SCHEME, 
+				TURI.TEMF_MAP_SCHEME, 
 				fileUri.authority(),
 				fileUri.device(),
 				fileUri.segments(),
