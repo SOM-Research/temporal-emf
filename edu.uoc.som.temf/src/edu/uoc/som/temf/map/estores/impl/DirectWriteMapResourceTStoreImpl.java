@@ -43,7 +43,7 @@ import edu.uoc.som.temf.core.exceptions.EClassNotFoundException;
 import edu.uoc.som.temf.core.impl.TObjectAdapterFactoryImpl;
 import edu.uoc.som.temf.estores.SearcheableResourceTStore;
 
-public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTStore {
+public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTStore {
 
 	protected static final String DATA = "data";
 	protected static final String INSTANCE_OF = "instanceOf";
@@ -73,8 +73,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 	
 	protected Resource.Internal resource;
 
-	@SuppressWarnings("unchecked")
-	public DirectWriteMapDBResourceTStoreImpl(Resource.Internal resource, MVStore mvStore) {
+	public DirectWriteMapResourceTStoreImpl(Resource.Internal resource, MVStore mvStore) {
 		this.mvStore = mvStore;
 		this.resource = resource;
 		this.dataMap = mvStore.openMap(DATA);
@@ -90,7 +89,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 
 	@Override
 	public Object get(InternalEObject object, EStructuralFeature feature, int index) {
-		return getAt(null, object, feature, index);
+		return getAt(now(), object, feature, index);
 	}
 
 	@Override
@@ -110,7 +109,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 		if (!eAttribute.isMany()) {
 			return parseMapValue(eAttribute, (String) value);
 		} else {
-			String[] array = (String[]) value;
+			Object[] array = (Object[]) value;
 			return parseMapValue(eAttribute, array[index]);
 		}
 	}
@@ -120,8 +119,8 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 		if (!eReference.isMany()) {
 			return getEObject((String) value);
 		} else {
-			String[] array = Arrays.stream((Object[]) value).toArray(String[]::new);
-			return getEObject(array[index]);
+			Object[] array = Arrays.stream((Object[]) value).toArray(Object[]::new);
+			return getEObject((String) array[index]);
 		}
 	}
 
@@ -143,7 +142,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 		if (!eAttribute.isMany()) {
 			all.forEach((key, obj) ->  result.put(key.instant, parseMapValue(eAttribute, (String) obj)));
 		} else {
-			all.forEach((key, obj) ->  result.put(key.instant, parseMapValue(eAttribute, parseMapValue(eAttribute, ((String[]) obj)[index]))));
+			all.forEach((key, obj) ->  result.put(key.instant, parseMapValue(eAttribute, parseMapValue(eAttribute, ((Object[]) obj)[index]))));
 		}
 		return result;
 	}
@@ -154,7 +153,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 		if (!eReference.isMany()) {
 			all.forEach((key, obj) ->  result.put(key.instant, getEObject((String) obj)));
 		} else {
-			all.forEach((key, obj) ->  result.put(key.instant, getEObject(((String[]) obj)[index])));
+			all.forEach((key, obj) ->  result.put(key.instant, getEObject((String) ((Object[]) obj)[index])));
 		}
 		return result;
 	}
@@ -209,7 +208,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 	@Override
 	public boolean isSetAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		return dataMap.get(DataKey.from(tObject.tId(), feature.getName(), instant)) != null;
+		return getFromDataMap(instant, tObject, feature) != null;
 	}
 
 
@@ -291,7 +290,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 
 	@Override
 	public boolean isEmpty(InternalEObject object, EStructuralFeature feature) {
-		return isEmptyAt(null, object, feature);
+		return isEmptyAt(now(), object, feature);
 	}
 	
 	@Override
@@ -301,19 +300,19 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 
 	@Override
 	public int size(InternalEObject object, EStructuralFeature feature) {
-		return sizeAt(null, object, feature);
+		return sizeAt(now(), object, feature);
 	}
 	
 	@Override
 	public int sizeAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		String[] array = (String[]) getFromDataMap(instant, tObject, feature);
+		Object[] array = (Object[]) getFromDataMap(instant, tObject, feature);
 		return array != null ? array.length : 0;
 	}
 
 	@Override
 	public boolean contains(InternalEObject object, EStructuralFeature feature, Object value) {
-		return containsAt(null, object, feature, value);
+		return containsAt(now(), object, feature, value);
 	}
 
 	@Override
@@ -323,13 +322,13 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 	
 	@Override
 	public int indexOf(InternalEObject object, EStructuralFeature feature, Object value) {
-		return indexOfAt(null, object, feature, value);
+		return indexOfAt(now(), object, feature, value);
 	}
 	
 	@Override
 	public int indexOfAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		String[] array = (String[]) getFromDataMap(instant, tObject, feature);
+		Object[] array = (Object[]) getFromDataMap(instant, tObject, feature);
 		if (array == null) {
 			return -1;
 		}
@@ -343,13 +342,13 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 
 	@Override
 	public int lastIndexOf(InternalEObject object, EStructuralFeature feature, Object value) {
-		return lastIndexOfAt(null, object, feature, value);
+		return lastIndexOfAt(now(), object, feature, value);
 	}
 	
 	@Override
 	public int lastIndexOfAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		String[] array = (String[]) getFromDataMap(instant, tObject, feature);
+		Object[] array = (Object[]) getFromDataMap(instant, tObject, feature);
 		if (array == null) {
 			return -1;
 		}
@@ -369,7 +368,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 
 	@Override
 	public Object[] toArray(InternalEObject object, EStructuralFeature feature) {
-		return toArrayAt(null, object, feature);
+		return toArrayAt(now(), object, feature);
 	}
 	
 	@Override
@@ -384,7 +383,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 
 	@Override
 	public <T> T[] toArray(InternalEObject object, EStructuralFeature feature, T[] array) {
-		return toArrayAt(null, object, feature, array);
+		return toArrayAt(now(), object, feature, array);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -411,9 +410,9 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 		TreeMap<DataKey, Object> all = getAllFromDataMap(startInstant, endInstant, tObject, feature);
 		
 		if (feature instanceof EAttribute) {
-			all.forEach((key, obj) ->  result.put(key.instant, Arrays.asList((String[]) obj).stream().map(v -> parseMapValue((EAttribute) feature, (String) v)).toArray()));
+			all.forEach((key, obj) ->  result.put(key.instant, Arrays.asList((Object[]) obj).stream().map(v -> parseMapValue((EAttribute) feature, (String) v)).toArray()));
 		} else if (feature instanceof EReference) {
-			all.forEach((key, obj) ->  result.put(key.instant, Arrays.asList((String[]) obj).stream().map(v -> getEObject((String) v)).toArray()));
+			all.forEach((key, obj) ->  result.put(key.instant, Arrays.asList((Object[]) obj).stream().map(v -> getEObject((String) v)).toArray()));
 		} else {
 			throw new IllegalArgumentException(feature.toString());
 		}
@@ -422,7 +421,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 	}
 	@Override
 	public int hashCode(InternalEObject object, EStructuralFeature feature) {
-		return hashCodeAt(null, object, feature);
+		return hashCodeAt(now(), object, feature);
 	}
 	
 	@Override
@@ -550,8 +549,12 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 	 *         many-valued {@link EStructuralFeature}s
 	 */
 	protected Object getFromDataMap(Instant endInstant, TObject object, EStructuralFeature feature) {
-		Object lower = dataMap.get(dataMap.ceilingKey(DataKey.from(object.tId(), feature.getName(), endInstant)));
-		return lower;
+		DataKey floorKey = dataMap.floorKey(DataKey.from(object.tId(), feature.getName(), endInstant));
+		if (floorKey != null && object.tId().equals(floorKey.id) && feature.getName().equals(floorKey.feature)) {
+			return dataMap.get(floorKey);
+		} else {
+			return null;
+		}
 	}
 	
 	protected TreeMap<DataKey, Object> getAllFromDataMap(Instant startInstant, Instant endInstant, TObject object, EStructuralFeature feature) {

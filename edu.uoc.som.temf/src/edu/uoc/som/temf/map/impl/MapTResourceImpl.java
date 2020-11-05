@@ -57,9 +57,9 @@ import edu.uoc.som.temf.estores.SearcheableResourceTStore;
 import edu.uoc.som.temf.estores.TStore;
 import edu.uoc.som.temf.estores.impl.IsSetCachingDelegatedTStoreImpl;
 import edu.uoc.som.temf.estores.impl.SizeCachingDelegatedTStoreImpl;
-import edu.uoc.som.temf.map.estores.impl.DirectWriteMapDBResourceTStoreImpl;
+import edu.uoc.som.temf.map.estores.impl.DirectWriteMapResourceTStoreImpl;
 
-public class MapDBTResourceImpl extends ResourceImpl implements TResource {
+public class MapTResourceImpl extends ResourceImpl implements TResource {
 
 	/**
 	 * Fake {@link EStructuralFeature} that represents the
@@ -107,13 +107,13 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 	protected SearcheableResourceTStore eStore;
 
 	protected MVStore mvStore;
-	
+
 	protected boolean isPersistent = false;
 
-	public MapDBTResourceImpl(URI uri) {
+	public MapTResourceImpl(URI uri) {
 		super(uri);
 		this.mvStore = new MVStore.Builder().fileStore(new OffHeapStore()).open();
-		this.eStore = new DirectWriteMapDBResourceTStoreImpl(this, mvStore);
+		this.eStore = new DirectWriteMapResourceTStoreImpl(this, mvStore);
 		this.isPersistent = false;
 	}
 
@@ -123,7 +123,7 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 	 * @return
 	 */
 	protected File getFile() {
-		return FileUtils.getFile(TURI.createTURI(getURI().appendSegment("kyanos.mapdb")).toFileString());
+		return FileUtils.getFile(TURI.createTURI(getURI().appendSegment("mvstore")).toFileString());
 	}
 
 	@Override
@@ -166,12 +166,11 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 			if (!getFile().getParentFile().exists()) {
 				getFile().getParentFile().mkdirs();
 			}
-			MVStore newMvStore =  MVStore.open(getFile().getAbsolutePath());
+			MVStore newMvStore = MVStore.open(getFile().getAbsolutePath());
 			if (!newMvStore.getMapNames().isEmpty()) {
-				Logger.log(Logger.SEVERITY_WARNING, 
-						NLS.bind("Saving on existing db {0} without previously loading its contents. "
-								+ "DB contents will be lost.", getFile().toString()));
-				newMvStore.getFileStore().clear();
+				Logger.log(Logger.SEVERITY_WARNING,
+						NLS.bind("Saving on existing db {0} without previously loading its contents. " + "DB contents will be lost.", getFile().toString()));
+				newMvStore.getMapNames().forEach(name -> newMvStore.openMap(name).clear());
 			}
 			// TODO: Copy in memory map to persistent map
 			this.mvStore = newMvStore;
@@ -191,7 +190,8 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 	@SuppressWarnings("unchecked")
 	@Override
 	public EList<EObject> getContents(Instant instant) {
-		return ECollections.unmodifiableEList((EList<EObject>)(Object)ECollections.asEList(eStore().toArrayAt(instant, DUMMY_ROOT_EOBJECT, ROOT_CONTENTS_ESTRUCTURALFEATURE)));
+		return ECollections.unmodifiableEList(
+				(EList<EObject>) (Object) ECollections.asEList(eStore().toArrayAt(instant, DUMMY_ROOT_EOBJECT, ROOT_CONTENTS_ESTRUCTURALFEATURE)));
 	}
 
 	public TreeIterator<EObject> getAllContents(final Instant instant) {
@@ -200,7 +200,7 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 
 			@Override
 			public Iterator<EObject> getChildren(Object object) {
-				return object == MapDBTResourceImpl.this ? MapDBTResourceImpl.this.getContents(instant).iterator()
+				return object == MapTResourceImpl.this ? MapTResourceImpl.this.getContents(instant).iterator()
 						: ((TObject) object).eContents(instant).iterator();
 			}
 		};
@@ -233,7 +233,7 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 	protected void shutdown() {
 		this.mvStore.close();
 		this.mvStore = new MVStore.Builder().fileStore(new OffHeapStore()).open();
-		this.eStore = new DirectWriteMapDBResourceTStoreImpl(this, mvStore);
+		this.eStore = new DirectWriteMapResourceTStoreImpl(this, mvStore);
 		this.isPersistent = false;
 	}
 
@@ -259,15 +259,13 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 	}
 
 	/**
-	 * Creates the {@link SearcheableResourceEStore} used by this
-	 * {@link Resource}.
+	 * Creates the {@link SearcheableResourceEStore} used by this {@link Resource}.
 	 * 
 	 * @param graph
 	 * @return
 	 */
 	protected SearcheableResourceTStore createResourceEStore(MVStore mvStore) throws IOException {
-		return new IsSetCachingDelegatedTStoreImpl(
-				new SizeCachingDelegatedTStoreImpl(new DirectWriteMapDBResourceTStoreImpl(this, mvStore)));
+		return new IsSetCachingDelegatedTStoreImpl(new SizeCachingDelegatedTStoreImpl(new DirectWriteMapResourceTStoreImpl(this, mvStore)));
 	}
 
 	/**
@@ -294,7 +292,7 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 
 		@Override
 		public Object getNotifier() {
-			return MapDBTResourceImpl.this;
+			return MapTResourceImpl.this;
 		}
 
 		@Override
@@ -304,7 +302,7 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 
 		@Override
 		protected boolean isNotificationRequired() {
-			return MapDBTResourceImpl.this.eNotificationRequired();
+			return MapTResourceImpl.this.eNotificationRequired();
 		}
 
 		@Override
@@ -325,20 +323,20 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 		@Override
 		public NotificationChain inverseAdd(EObject object, NotificationChain notifications) {
 			InternalEObject eObject = (InternalEObject) object;
-			notifications = eObject.eSetResource(MapDBTResourceImpl.this, notifications);
-			MapDBTResourceImpl.this.attached(eObject);
+			notifications = eObject.eSetResource(MapTResourceImpl.this, notifications);
+			MapTResourceImpl.this.attached(eObject);
 			return notifications;
 		}
 
 		@Override
 		public NotificationChain inverseRemove(EObject object, NotificationChain notifications) {
 			InternalEObject eObject = (InternalEObject) object;
-			if (MapDBTResourceImpl.this.isLoaded || unloadingContents != null) {
-				MapDBTResourceImpl.this.detached(eObject);
+			if (MapTResourceImpl.this.isLoaded || unloadingContents != null) {
+				MapTResourceImpl.this.detached(eObject);
 			}
 			return eObject.eSetResource(null, notifications);
 		}
-		
+
 		@Override
 		protected void delegateAdd(int index, EObject object) {
 			// FIXME? Maintain a list of hard links to the elements while moving
@@ -350,14 +348,11 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 			InternalTObject eObject = TObjectAdapterFactoryImpl.getAdapter(object, InternalTObject.class);
 			// Collect all contents
 			hardLinksList.add(object);
-			for (Iterator<EObject> it = eObject.eAllContents(); it.hasNext(); hardLinksList.add(it.next()));
+			eObject.eAllContents().forEachRemaining(e -> hardLinksList.add(e));
 			// Iterate using the hard links list instead the getAllContents
 			// We ensure that using the hardLinksList it is not taken out by JIT
 			// compiler
-			for (EObject element : hardLinksList) {
-				InternalTObject internalElement = TObjectAdapterFactoryImpl.getAdapter(element, InternalTObject.class);
-				internalElement.tSetResource(MapDBTResourceImpl.this);
-			}
+			hardLinksList.forEach(e -> TObjectAdapterFactoryImpl.getAdapter(e, InternalTObject.class).tSetResource(MapTResourceImpl.this));
 			super.delegateAdd(index, object);
 		}
 
@@ -368,7 +363,8 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 			InternalTObject eObject = TObjectAdapterFactoryImpl.getAdapter(object, InternalTObject.class);
 			// Collect all contents
 			hardLinksList.add(object);
-			for (Iterator<EObject> it = eObject.eAllContents(); it.hasNext(); hardLinksList.add(it.next()));
+			for (Iterator<EObject> it = eObject.eAllContents(); it.hasNext(); hardLinksList.add(it.next()))
+				;
 			// Iterate using the hard links list instead the getAllContents
 			// We ensure that using the hardLinksList it is not taken out by JIT
 			// compiler
@@ -376,9 +372,9 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 				InternalTObject internalElement = TObjectAdapterFactoryImpl.getAdapter(element, InternalTObject.class);
 				internalElement.tSetResource(null);
 			}
-			return object;			
+			return object;
 		}
-		
+
 		@Override
 		protected void didAdd(int index, EObject object) {
 			super.didAdd(index, object);
@@ -410,10 +406,10 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 		}
 
 		protected void loaded() {
-			if (!MapDBTResourceImpl.this.isLoaded()) {
-				Notification notification = MapDBTResourceImpl.this.setLoaded(true);
+			if (!MapTResourceImpl.this.isLoaded()) {
+				Notification notification = MapTResourceImpl.this.setLoaded(true);
 				if (notification != null) {
-					MapDBTResourceImpl.this.eNotify(notification);
+					MapTResourceImpl.this.eNotify(notification);
 				}
 			}
 		}
@@ -425,7 +421,7 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 		}
 	}
 
-	public static void shutdownWithoutUnload(MapDBTResourceImpl resource) {
+	public static void shutdownWithoutUnload(MapTResourceImpl resource) {
 		resource.shutdown();
 	}
 }
