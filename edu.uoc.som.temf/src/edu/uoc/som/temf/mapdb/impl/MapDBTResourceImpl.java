@@ -41,8 +41,8 @@ import org.eclipse.emf.ecore.impl.EStoreEObjectImpl.EStoreEList;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl;
 import org.eclipse.osgi.util.NLS;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
+import org.h2.mvstore.MVStore;
+import org.h2.mvstore.OffHeapStore;
 
 import edu.uoc.som.temf.Logger;
 import edu.uoc.som.temf.TURI;
@@ -106,14 +106,14 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 
 	protected SearcheableResourceTStore eStore;
 
-	protected DB db;
+	protected MVStore mvStore;
 	
 	protected boolean isPersistent = false;
 
 	public MapDBTResourceImpl(URI uri) {
 		super(uri);
-		this.db = DBMaker.heapDB().closeOnJvmShutdown().make();
-		this.eStore = new DirectWriteMapDBResourceTStoreImpl(this, db);
+		this.mvStore = new MVStore.Builder().fileStore(new OffHeapStore()).open();
+		this.eStore = new DirectWriteMapDBResourceTStoreImpl(this, mvStore);
 		this.isPersistent = false;
 	}
 
@@ -135,9 +135,9 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 			} else if (!getFile().exists()) {
 				throw new FileNotFoundException(uri.toFileString());
 			} else {
-				this.db = DBMaker.fileDB(getFile()).closeOnJvmShutdown().fileMmapEnableIfSupported().make();
+				this.mvStore = MVStore.open(getFile().getAbsolutePath());
 				this.isPersistent = true;
-				this.eStore = createResourceEStore(db);
+				this.eStore = createResourceEStore(this.mvStore);
 			}
 			this.options = options;
 			isLoaded = true;
@@ -166,23 +166,21 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 			if (!getFile().getParentFile().exists()) {
 				getFile().getParentFile().mkdirs();
 			}
-			DB newDb =  DBMaker.fileDB(getFile()).fileMmapEnableIfSupported().closeOnJvmShutdown().make();
-			if (!newDb.getAll().isEmpty()) {
+			MVStore newMvStore =  MVStore.open(getFile().getAbsolutePath());
+			if (!newMvStore.getMapNames().isEmpty()) {
 				Logger.log(Logger.SEVERITY_WARNING, 
 						NLS.bind("Saving on existing db {0} without previously loading its contents. "
 								+ "DB contents will be lost.", getFile().toString()));
-				// TODO: Not sure if this is the proper way to remove the collections
-				// The API is poorly documented
-				newDb.getAll().forEach((k, v) -> newDb.nameCatalogLoad().remove(k));
+				newMvStore.getFileStore().clear();
 			}
 			// TODO: Copy in memory map to persistent map
-			this.db = newDb;
+			this.mvStore = newMvStore;
 			this.isPersistent = true;
-			this.eStore = createResourceEStore(this.db);
+			this.eStore = createResourceEStore(this.mvStore);
 			this.isLoaded = true;
 		}
 
-		db.commit();
+		mvStore.commit();
 	}
 
 	@Override
@@ -223,7 +221,7 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 		if (eObject.eResource() != this) {
 			return "/-1";
 		} else {
-			// Try to adapt as a KyanosEObject and return the ID
+			// Try to adapt as a TObject and return the ID
 			TObject tObject = TObjectAdapterFactoryImpl.getAdapter(eObject, TObject.class);
 			if (tObject != null) {
 				return (tObject.tId());
@@ -233,9 +231,9 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 	}
 
 	protected void shutdown() {
-		this.db.close();
-		this.db = DBMaker.memoryDB().closeOnJvmShutdown().make();
-		this.eStore = new DirectWriteMapDBResourceTStoreImpl(this, db);
+		this.mvStore.close();
+		this.mvStore = new MVStore.Builder().fileStore(new OffHeapStore()).open();
+		this.eStore = new DirectWriteMapDBResourceTStoreImpl(this, mvStore);
 		this.isPersistent = false;
 	}
 
@@ -267,9 +265,9 @@ public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 	 * @param graph
 	 * @return
 	 */
-	protected SearcheableResourceTStore createResourceEStore(DB db) throws IOException {
+	protected SearcheableResourceTStore createResourceEStore(MVStore mvStore) throws IOException {
 		return new IsSetCachingDelegatedTStoreImpl(
-				new SizeCachingDelegatedTStoreImpl(new DirectWriteMapDBResourceTStoreImpl(this, db)));
+				new SizeCachingDelegatedTStoreImpl(new DirectWriteMapDBResourceTStoreImpl(this, mvStore)));
 	}
 
 	/**
