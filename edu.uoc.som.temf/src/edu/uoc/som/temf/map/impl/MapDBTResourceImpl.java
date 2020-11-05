@@ -8,7 +8,7 @@
  * Contributors:
  *     Abel Gómez - initial API and implementation
  *******************************************************************************/
-package edu.uoc.som.temf.mapdb.impl;
+package edu.uoc.som.temf.map.impl;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -57,7 +57,7 @@ import edu.uoc.som.temf.estores.SearcheableResourceTStore;
 import edu.uoc.som.temf.estores.TStore;
 import edu.uoc.som.temf.estores.impl.IsSetCachingDelegatedTStoreImpl;
 import edu.uoc.som.temf.estores.impl.SizeCachingDelegatedTStoreImpl;
-import edu.uoc.som.temf.mapdb.estores.impl.DirectWriteMapDBResourceTStoreImpl;
+import edu.uoc.som.temf.map.estores.impl.DirectWriteMapDBResourceTStoreImpl;
 
 public class MapDBTResourceImpl extends ResourceImpl implements TResource {
 

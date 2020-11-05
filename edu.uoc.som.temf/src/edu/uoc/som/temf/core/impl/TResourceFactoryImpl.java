@@ -16,7 +16,7 @@ import org.eclipse.emf.ecore.resource.Resource;
 
 import edu.uoc.som.temf.TURI;
 import edu.uoc.som.temf.core.TResourceFactory;
-import edu.uoc.som.temf.mapdb.impl.MapDBTResourceImpl;
+import edu.uoc.som.temf.map.impl.MapDBTResourceImpl;
 
 public class TResourceFactoryImpl implements TResourceFactory {
 

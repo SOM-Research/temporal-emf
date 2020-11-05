@@ -8,7 +8,7 @@
  * Contributors:
  *     Abel Gómez - initial API and implementation
  *******************************************************************************/
-package edu.uoc.som.temf.mapdb.estores.impl;
+package edu.uoc.som.temf.map.estores.impl;
 
 import java.io.Serializable;
 import java.text.MessageFormat;
