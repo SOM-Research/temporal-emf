@@ -65,11 +65,11 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 	
 	protected MVStore mvStore;
 	
-	protected MVMap<Object[], Object> dataMap; // Object[] must be an array of { String, String, Date }
+	protected MVMap<DataKey, Object> dataMap; // Object[] must be an array of { String, String, Date }
 	
 	protected MVMap<String, EClassInfo> instanceOfMap;
 
-	protected MVMap<Object[], ContainerInfo> containersMap; // Object[] must be an array of { String, Date }
+	protected MVMap<ContainerKey, ContainerInfo> containersMap; // Object[] must be an array of { String, Date }
 	
 	protected Resource.Internal resource;
 
@@ -139,22 +139,22 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 	
 	protected SortedMap<Instant, Object> getAllBetween(Instant startInstant, Instant endInstant, TObject object, EAttribute eAttribute, int index) {
 		SortedMap<Instant, Object> result = new TreeMap<>();
-		TreeMap<Object[], Object> all = getAllFromDataMap(startInstant, endInstant, object, eAttribute);
+		TreeMap<DataKey, Object> all = getAllFromDataMap(startInstant, endInstant, object, eAttribute);
 		if (!eAttribute.isMany()) {
-			all.forEach((array, obj) ->  result.put(dataKeyInstant(array), parseMapValue(eAttribute, (String) obj)));
+			all.forEach((key, obj) ->  result.put(key.instant, parseMapValue(eAttribute, (String) obj)));
 		} else {
-			all.forEach((array, obj) ->  result.put(dataKeyInstant(array), parseMapValue(eAttribute, parseMapValue(eAttribute, ((String[]) obj)[index]))));
+			all.forEach((key, obj) ->  result.put(key.instant, parseMapValue(eAttribute, parseMapValue(eAttribute, ((String[]) obj)[index]))));
 		}
 		return result;
 	}
 	
 	protected SortedMap<Instant, Object> getAllBetween(Instant startInstant, Instant endInstant, TObject object, EReference eReference, int index) {
 		SortedMap<Instant, Object> result = new TreeMap<>();
-		TreeMap<Object[], Object> all = getAllFromDataMap(startInstant, endInstant, object, eReference);
+		TreeMap<DataKey, Object> all = getAllFromDataMap(startInstant, endInstant, object, eReference);
 		if (!eReference.isMany()) {
-			all.forEach((array, obj) ->  result.put(dataKeyInstant(array), getEObject((String) obj)));
+			all.forEach((key, obj) ->  result.put(key.instant, getEObject((String) obj)));
 		} else {
-			all.forEach((array, obj) ->  result.put(dataKeyInstant(array), getEObject(((String[]) obj)[index])));
+			all.forEach((key, obj) ->  result.put(key.instant, getEObject(((String[]) obj)[index])));
 		}
 		return result;
 	}
@@ -173,13 +173,13 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 
 	protected Object set(TObject object, EAttribute eAttribute, int index, Object value) {
 		if (!eAttribute.isMany()) {
-			Object oldValue = dataMap.put(dataKey(object.tId(), eAttribute.getName()), serializeToMapValue(eAttribute, value));
+			Object oldValue = dataMap.put(DataKey.from(object.tId(), eAttribute.getName()), serializeToMapValue(eAttribute, value));
 			return parseMapValue(eAttribute, oldValue);
 		} else {
 			Object[] array = (Object[]) getFromDataMap(object, eAttribute);
 			Object oldValue = array[index]; 
 			array[index] = serializeToMapValue(eAttribute, value);
-			dataMap.put(dataKey(object.tId(), eAttribute.getName()), array);
+			dataMap.put(DataKey.from(object.tId(), eAttribute.getName()), array);
 			return parseMapValue(eAttribute, oldValue);
 		}
 	}
@@ -188,13 +188,13 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 		updateContainment(object, eReference, referencedObject);
 		updateInstanceOf(referencedObject);
 		if (!eReference.isMany()) {
-			Object oldId = dataMap.put(dataKey(object.tId(), eReference.getName()), referencedObject.tId());
+			Object oldId = dataMap.put(DataKey.from(object.tId(), eReference.getName()), referencedObject.tId());
 			return oldId != null ? getEObject((String) oldId) : null;
 		} else {
 			Object[] array = (Object[]) getFromDataMap(object, eReference);
 			Object oldId = array[index];
 			array[index] = referencedObject.tId();
-			dataMap.put(dataKey(object.tId(), eReference.getName()), array);
+			dataMap.put(DataKey.from(object.tId(), eReference.getName()), array);
 			return oldId != null ? getEObject((String) oldId) : null;
 		}
 	}
@@ -209,7 +209,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 	@Override
 	public boolean isSetAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		return dataMap.get(dataKey(tObject.tId(), feature.getName(), instant)) != null;
+		return dataMap.get(DataKey.from(tObject.tId(), feature.getName(), instant)) != null;
 	}
 
 
@@ -232,7 +232,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 			array = new Object[] {};
 		}
 		array = ArrayUtils.add(array, index, serializeToMapValue(eAttribute, value));
-		dataMap.put(dataKey(object.tId(), eAttribute.getName()), array);
+		dataMap.put(DataKey.from(object.tId(), eAttribute.getName()), array);
 	}
 
 	protected void add(TObject object, EReference eReference, int index, TObject referencedObject) {
@@ -243,7 +243,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 			array = new Object[] {};
 		}
 		array = ArrayUtils.add(array, index, referencedObject.tId());
-		dataMap.put(dataKey(object.tId(), eReference.getName()), array);
+		dataMap.put(DataKey.from(object.tId(), eReference.getName()), array);
 	}
 
 	@Override
@@ -262,7 +262,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 		Object[] array = (Object[]) getFromDataMap(object, eAttribute);
 		Object oldValue = array[index];
 		array = ArrayUtils.remove(array, index);
-		dataMap.put(dataKey(object.tId(), eAttribute.getName()), array);
+		dataMap.put(DataKey.from(object.tId(), eAttribute.getName()), array);
 		return parseMapValue(eAttribute, oldValue);
 	}
 
@@ -270,7 +270,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 		Object[] array = (Object[]) getFromDataMap(object, eReference);
 		Object oldId = array[index];
 		array = ArrayUtils.remove(array, index);
-		dataMap.put(dataKey(object.tId(), eReference.getName()), array);
+		dataMap.put(DataKey.from(object.tId(), eReference.getName()), array);
 		return getEObject((String) oldId);
 
 	}
@@ -286,7 +286,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 	@Override
 	public void unset(InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		dataMap.remove(dataKey(tObject.tId(), feature.getName()));
+		dataMap.remove(DataKey.from(tObject.tId(), feature.getName()));
 	}
 
 	@Override
@@ -364,7 +364,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 	@Override
 	public void clear(InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		dataMap.put(dataKey(tObject.tId(), feature.getName()), new Object[] {});
+		dataMap.put(DataKey.from(tObject.tId(), feature.getName()), new Object[] {});
 	}
 
 	@Override
@@ -408,12 +408,12 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
 
 		SortedMap<Instant, Object[]> result = new TreeMap<>();
-		TreeMap<Object[], Object> all = getAllFromDataMap(startInstant, endInstant, tObject, feature);
+		TreeMap<DataKey, Object> all = getAllFromDataMap(startInstant, endInstant, tObject, feature);
 		
 		if (feature instanceof EAttribute) {
-			all.forEach((array, obj) ->  result.put(dataKeyInstant(array), Arrays.asList((String[]) obj).stream().map(v -> parseMapValue((EAttribute) feature, (String) v)).toArray()));
+			all.forEach((key, obj) ->  result.put(key.instant, Arrays.asList((String[]) obj).stream().map(v -> parseMapValue((EAttribute) feature, (String) v)).toArray()));
 		} else if (feature instanceof EReference) {
-			all.forEach((array, obj) ->  result.put(dataKeyInstant(array), Arrays.asList((String[]) obj).stream().map(v -> getEObject((String) v)).toArray()));
+			all.forEach((key, obj) ->  result.put(key.instant, Arrays.asList((String[]) obj).stream().map(v -> getEObject((String) v)).toArray()));
 		} else {
 			throw new IllegalArgumentException(feature.toString());
 		}
@@ -439,7 +439,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 	@Override
 	public InternalEObject getContainerAt(Instant instant, InternalEObject object) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		ContainerInfo lower = containersMap.get(containersMap.ceilingKey(containerKey(tObject.tId(), instant)));
+		ContainerInfo lower = containersMap.get(containersMap.ceilingKey(ContainerKey.from(tObject.tId(), instant)));
 		if (lower != null) {
 			return (InternalEObject) getEObject(lower.containerId);
 		}
@@ -455,7 +455,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 	@Override
 	public EStructuralFeature getContainingFeatureAt(Instant instant, InternalEObject object) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		ContainerInfo lower = containersMap.get(containersMap.ceilingKey(containerKey(tObject.tId(), instant)));
+		ContainerInfo lower = containersMap.get(containersMap.ceilingKey(ContainerKey.from(tObject.tId(), instant)));
 		if (lower != null) {
 			EObject container = getEObject(lower.containerId);
 			container.eClass().getEStructuralFeature(lower.containingFeatureName);
@@ -510,9 +510,9 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 	
 	protected void updateContainment(TObject object, EReference eReference, TObject referencedObject) {
 		if (eReference.isContainment()) {
-			ContainerInfo lower = containersMap.get(containersMap.ceilingKey(containerKey(referencedObject.tId())));
+			ContainerInfo lower = containersMap.get(containersMap.ceilingKey(ContainerKey.from(referencedObject.tId())));
 			if (lower == null || !StringUtils.equals(lower.containerId, object.tId())) {
-				containersMap.put(containerKey(referencedObject.tId()), new ContainerInfo(object.tId(), eReference.getName()));
+				containersMap.put(ContainerKey.from(referencedObject.tId()), ContainerInfo.from(object.tId(), eReference.getName()));
 			}
 		}
 	}
@@ -520,7 +520,7 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 	protected void updateInstanceOf(TObject object) {
 		EClassInfo info = instanceOfMap.get(object.tId());
 		if (info == null) {
-			instanceOfMap.put(object.tId(), new EClassInfo(object.eClass().getEPackage().getNsURI(), object.eClass().getName()));
+			instanceOfMap.put(object.tId(), EClassInfo.from(object.eClass().getEPackage().getNsURI(), object.eClass().getName()));
 		}
 	}
 
@@ -550,16 +550,16 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 	 *         many-valued {@link EStructuralFeature}s
 	 */
 	protected Object getFromDataMap(Instant endInstant, TObject object, EStructuralFeature feature) {
-		Object lower = dataMap.get(dataMap.ceilingKey(dataKey(object.tId(), feature.getName(), endInstant)));
+		Object lower = dataMap.get(dataMap.ceilingKey(DataKey.from(object.tId(), feature.getName(), endInstant)));
 		return lower;
 	}
 	
-	protected TreeMap<Object[], Object> getAllFromDataMap(Instant startInstant, Instant endInstant, TObject object, EStructuralFeature feature) {
-		TreeMap<Object[], Object> result = new TreeMap<>();
-		Object[] firstKey = dataMap.ceilingKey(dataKey(object.tId(), feature.getName(), startInstant));
-		Object[] lastKey = dataMap.floorKey(dataKey(object.tId(), feature.getName(), startInstant));
-		Cursor<Object[], Object> c = dataMap.cursor(firstKey);
-		while (!Arrays.equals(c.getKey(), lastKey)) {
+	protected TreeMap<DataKey, Object> getAllFromDataMap(Instant startInstant, Instant endInstant, TObject object, EStructuralFeature feature) {
+		TreeMap<DataKey, Object> result = new TreeMap<>();
+		DataKey firstKey = dataMap.ceilingKey(DataKey.from(object.tId(), feature.getName(), startInstant));
+		DataKey lastKey = dataMap.floorKey(DataKey.from(object.tId(), feature.getName(), startInstant));
+		Cursor<DataKey, Object> c = dataMap.cursor(firstKey);
+		while (!c.getKey().equals(lastKey)) {
 			result.put(c.getKey(), c.getValue());
 			c.next();
 		};
@@ -589,65 +589,154 @@ public class DirectWriteMapDBResourceTStoreImpl implements SearcheableResourceTS
 		}
 	}
 	
-	private static Object[] containerKey(String id) {
-		return containerKey(id, now());
-	}
-
-	private static Object[] containerKey(String id, Instant instant) {
-		return new Object[] { id, instant };
-	}
-	
-	private static Object[] dataKey(String id, String featureName) {
-		return dataKey(id, featureName, now());
-	}
-	
-	private static Object[] dataKey(String id, String featureName, Instant instant) {
-		if (instant == null) {
-			instant = now();
+	private static class DataKey implements Serializable {
+		
+		private static final long serialVersionUID = 1L;
+		
+		public final String id;
+		public final String feature;
+		public final Instant instant;
+		
+		private DataKey(String id, String feature, Instant instant) {
+			this.id = id;
+			this.feature = feature;
+			this.instant = instant;
 		}
-		return new Object[] { id, featureName, instant };
+		
+		public static DataKey from(String id, String feature, Instant instant) {
+			return new DataKey(id, feature, instant);
+		}
+
+		public static DataKey from(String id, String feature) {
+			return DataKey.from(id, feature, now());
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((feature == null) ? 0 : feature.hashCode());
+			result = prime * result + ((id == null) ? 0 : id.hashCode());
+			result = prime * result + ((instant == null) ? 0 : instant.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			DataKey other = (DataKey) obj;
+			if (feature == null) {
+				if (other.feature != null)
+					return false;
+			} else if (!feature.equals(other.feature))
+				return false;
+			if (id == null) {
+				if (other.id != null)
+					return false;
+			} else if (!id.equals(other.id))
+				return false;
+			if (instant == null) {
+				if (other.instant != null)
+					return false;
+			} else if (!instant.equals(other.instant))
+				return false;
+			return true;
+		}
+
+
 	}
 	
-	@SuppressWarnings("unused")
-	private static String dataKeyId(Object[] key) {
-		return (String) key[0];
-	}
-	
-	@SuppressWarnings("unused")
-	private static String dataKeyFeatureName(Object[] key) {
-		return (String) key[1];
-	}
-	
-	private static Instant dataKeyInstant(Object[] key) {
-		return (Instant) key[2];
+	private static class ContainerKey implements Serializable {
+		
+		private static final long serialVersionUID = 1L;
+		
+		public final String id;
+		public final Instant instant;
+		
+		private ContainerKey(String id, Instant instant) {
+			this.id = id;
+			this.instant = instant;
+		}
+		
+		public static ContainerKey from(String id, Instant instant) {
+			return new ContainerKey(id, instant);
+		}
+
+		public static ContainerKey from(String id) {
+			return ContainerKey.from(id, now());
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((id == null) ? 0 : id.hashCode());
+			result = prime * result + ((instant == null) ? 0 : instant.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			ContainerKey other = (ContainerKey) obj;
+			if (id == null) {
+				if (other.id != null)
+					return false;
+			} else if (!id.equals(other.id))
+				return false;
+			if (instant == null) {
+				if (other.instant != null)
+					return false;
+			} else if (!instant.equals(other.instant))
+				return false;
+			return true;
+		}
+
 	}
 	
 	private static class ContainerInfo implements Serializable {
 		
 		private static final long serialVersionUID = 1L;
 		
-		public String containerId;
+		public final String containerId;
 		
-		public String containingFeatureName;
+		public final String containingFeatureName;
 		
-		public ContainerInfo(String containerId, String containingFeatureName) {
+		private ContainerInfo(String containerId, String containingFeatureName) {
 			this.containerId = containerId;
 			this.containingFeatureName = containingFeatureName;
 		}
 		
+		public static ContainerInfo from(String containerId, String containingFeatureName) {
+			return new ContainerInfo(containerId, containingFeatureName);
+		}
 	}
 	
 	private static class EClassInfo implements Serializable {
 		
 		private static final long serialVersionUID = 1L;
 		
-		public String nsURI;
+		public final String nsURI;
 		
-		public String className;
+		public final String className;
 		
-		public EClassInfo(String nsURI, String className) {
+		private EClassInfo(String nsURI, String className) {
 			this.nsURI = nsURI;
 			this.className = className;
+		}
+		
+		public static EClassInfo from(String nsURI, String className) {
+			return new EClassInfo(nsURI, className);
 		}
 	}
 }
