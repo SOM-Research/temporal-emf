@@ -12,6 +12,8 @@
 
 package edu.uoc.som.temf.generator.migrator;
 
+import java.util.Arrays;
+
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -39,6 +41,15 @@ public abstract class TEmfMigratorUtil {
 	private static final String ROOT_EXTENDS_INTERFACE = TObject.class.getName();
 
 	public static final String PLUGIN_VARIABLE_TEMF = "TEMF=" + TEmfPlugin.PLUGIN_ID;
+
+	// @formatter:off
+	public static final String[] PLUGIN_DEPENDENCIES = { "org.apache.commons.io",
+															"org.apache.commons.lang3",
+															"net.bytebuddy.byte-buddy",
+															"com.google.guava",
+															"com.h2database"
+														};
+	// @formatter:on
 
 	public static final String TEMPLATES_PATH = "platform:/plugin/" + TEmfGeneratorPlugin.PLUGIN_ID + "/templates";
 
@@ -75,19 +86,24 @@ public abstract class TEmfMigratorUtil {
 			builder.append("true");
 			builder.append("\n");
 		}
-		
+
 		if (!TEMPLATES_PATH.equals(genModel.getTemplateDirectory())) {
 			genModel.setTemplateDirectory(TEMPLATES_PATH);
 			builder.append("Set template directory = ");
 			builder.append(TEMPLATES_PATH);
 			builder.append("\n");
 		}
-		
+
 		EList<String> pluginVariables = genModel.getModelPluginVariables();
 		if (!pluginVariables.contains(PLUGIN_VARIABLE_TEMF)) {
 			pluginVariables.add(PLUGIN_VARIABLE_TEMF);
+			pluginVariables.addAll(Arrays.asList(PLUGIN_DEPENDENCIES));
 			builder.append("Added Model Plugin Variables = ");
 			builder.append(PLUGIN_VARIABLE_TEMF);
+			Arrays.asList(PLUGIN_DEPENDENCIES).forEach(dep -> {
+				builder.append(", ");
+				builder.append(dep);
+			});
 			builder.append("\n");
 		}
 
