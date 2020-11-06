@@ -22,6 +22,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.codegen.ecore.genmodel.GenDelegationKind;
+import org.eclipse.emf.codegen.ecore.genmodel.GenJDKLevel;
 import org.eclipse.emf.codegen.ecore.genmodel.GenModel;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.WrappedException;
@@ -58,6 +59,13 @@ public abstract class TEmfMigratorUtil {
 
 	public static String adjustGenModel(GenModel genModel) {
 		StringBuilder builder = new StringBuilder();
+
+		if (genModel.getComplianceLevel() != GenJDKLevel.JDK110_LITERAL) {
+			genModel.setComplianceLevel(GenJDKLevel.JDK110_LITERAL);
+			builder.append("Set Compliance Level = ");
+			builder.append(GenJDKLevel.JDK110_LITERAL);
+			builder.append("\n");
+		}
 
 		if (genModel.getFeatureDelegation() != GenDelegationKind.REFLECTIVE_LITERAL) {
 			genModel.setFeatureDelegation(GenDelegationKind.REFLECTIVE_LITERAL);
