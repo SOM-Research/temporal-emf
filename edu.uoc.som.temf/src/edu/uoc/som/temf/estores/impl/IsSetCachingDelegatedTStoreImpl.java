@@ -107,7 +107,7 @@ public class IsSetCachingDelegatedTStoreImpl extends DelegatedResourceTStoreImpl
 
 	@Override
 	public void add(InternalEObject object, EStructuralFeature feature, int index, Object value) {
-		eStore.add(object, feature, index, value);
+		tStore.add(object, feature, index, value);
 		isSetCache.put(new MapKey(object, feature), true); 
 	}
 
@@ -119,7 +119,7 @@ public class IsSetCachingDelegatedTStoreImpl extends DelegatedResourceTStoreImpl
 	
 	@Override
 	public Object set(InternalEObject object, EStructuralFeature feature, int index, Object value) {
-		Object returnValue = eStore.set(object, feature, index, value);
+		Object returnValue = tStore.set(object, feature, index, value);
 		isSetCache.put(new MapKey(object, feature), true); 
 		return returnValue;
 	}
@@ -127,7 +127,7 @@ public class IsSetCachingDelegatedTStoreImpl extends DelegatedResourceTStoreImpl
 	@Override
 	public void clear(InternalEObject object, EStructuralFeature feature) {
 		isSetCache.put(new MapKey(object, feature), false); 
-		eStore.clear(object, feature);
+		tStore.clear(object, feature);
 	}
 	
 	@Override
