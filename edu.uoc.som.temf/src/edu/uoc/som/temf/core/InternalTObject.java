@@ -21,5 +21,4 @@ public interface InternalTObject extends TObject, InternalEObject {
 
 	void tSetResource(Resource.Internal resource);
 	
-	
 }
