@@ -19,8 +19,8 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 
 public interface TObject extends EObject {
 
-	public abstract String tId();
-	
+	String tId();
+
 	EList<EObject> eContents(Instant instant);
 	
 	Object eGetAt(Instant instant, EStructuralFeature feature);

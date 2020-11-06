@@ -27,9 +27,9 @@ import org.eclipse.emf.ecore.InternalEObject.EStore;
  */
 public interface TStore extends InternalEObject.EStore {
 
-	public final Instant EARLIEST_INSTANT = Instant.MIN;
+	final Instant EARLIEST_INSTANT = Instant.MIN;
 
-	public final Instant OLDEST_INSTANT = Instant.MAX;
+	final Instant OLDEST_INSTANT = Instant.MAX;
 	
 	/**
 	 * Returns the value at the index in the

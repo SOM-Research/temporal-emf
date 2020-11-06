@@ -29,7 +29,7 @@ public interface SearcheableResourceEStore extends InternalEObject.EStore {
 	 * 
 	 * @return
 	 */
-	public Resource getResource();
+	Resource getResource();
 
 	/**
 	 * Returns the resolved {@link EObject} identified by the given <code>id</code>
@@ -38,6 +38,6 @@ public interface SearcheableResourceEStore extends InternalEObject.EStore {
 	 * @param id
 	 * @return
 	 */
-	public EObject getEObject(String id);
+	EObject getEObject(String id);
 
 }

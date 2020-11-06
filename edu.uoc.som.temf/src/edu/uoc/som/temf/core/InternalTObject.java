@@ -15,11 +15,11 @@ import org.eclipse.emf.ecore.resource.Resource;
 
 public interface InternalTObject extends TObject, InternalEObject {
 
-	public abstract void tSetId(String id);
+	void tSetId(String id);
 	
-	public Resource.Internal tResource();
+	Resource.Internal tResource();
 
-	public void tSetResource(Resource.Internal resource);
+	void tSetResource(Resource.Internal resource);
 	
 	
 }

@@ -18,9 +18,9 @@ import edu.uoc.som.temf.core.impl.TFactoryImpl;
 
 public interface TFactory extends EFactory {
 
-	public static TFactory eINSTANCE = new TFactoryImpl();
+	static TFactory eINSTANCE = new TFactoryImpl();
 
 	@Override
-	public TObject create(EClass eClass);
+	TObject create(EClass eClass);
 	
 }

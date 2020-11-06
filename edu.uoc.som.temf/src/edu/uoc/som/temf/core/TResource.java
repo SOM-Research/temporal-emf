@@ -34,7 +34,7 @@ public interface TResource extends Resource, Resource.Internal {
 	 * 
 	 * @return the {@link TStore}
 	 */
-	public abstract TStore tStore();
+	TStore tStore();
 
 	/**
 	 * Returns the direct contents of this {@link TStore} at the given
@@ -43,7 +43,7 @@ public interface TResource extends Resource, Resource.Internal {
 	 * @param instant the {@link Instant}
 	 * @return the {@link TResource} contents at {@link Instant}
 	 */
-	public abstract EList<EObject> getContents(Instant instant);
+	EList<EObject> getContents(Instant instant);
 
 	/**
 	 * Returns all direct and indirect contents of this {@link TStore} at the given
@@ -53,7 +53,7 @@ public interface TResource extends Resource, Resource.Internal {
 	 * @return an iterator for all the contents of the {@link TResource} at
 	 *         {@link Instant}
 	 */
-	public abstract TreeIterator<EObject> getAllContents(Instant instant);
+	TreeIterator<EObject> getAllContents(Instant instant);
 
 	/**
 	 * Returns the internal clock used by the {@link TResource}. Client code must
@@ -67,5 +67,5 @@ public interface TResource extends Resource, Resource.Internal {
 	 * 
 	 * @return the {@link TResource} {@link Clock}
 	 */
-	public abstract Clock getClock();
+	Clock getClock();
 }

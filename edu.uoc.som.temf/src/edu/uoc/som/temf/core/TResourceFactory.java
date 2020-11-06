@@ -16,6 +16,6 @@ import edu.uoc.som.temf.core.impl.TResourceFactoryImpl;
 
 public interface TResourceFactory extends Resource.Factory {
 
-	public static TResourceFactory eINSTANCE = new TResourceFactoryImpl();
+	static TResourceFactory eINSTANCE = new TResourceFactoryImpl();
 	
 }
