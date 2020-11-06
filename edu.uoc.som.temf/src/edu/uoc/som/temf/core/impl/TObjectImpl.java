@@ -84,6 +84,11 @@ public class TObjectImpl extends MinimalEStoreEObjectImpl implements InternalTOb
 			return super.eContainer();
 		}
 	}
+	
+	@Override
+	public EObject eContainerAt(Instant instant) {
+		return eStore().getContainerAt(instant, this);
+	}
 
 	@Override
 	protected void eBasicSetContainer(InternalEObject newContainer) {
