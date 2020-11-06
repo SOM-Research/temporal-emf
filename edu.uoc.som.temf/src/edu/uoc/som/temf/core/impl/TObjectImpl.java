@@ -137,7 +137,7 @@ public class TObjectImpl extends MinimalEStoreEObjectImpl implements InternalTOb
 		EStore oldStore = eStore;
 		// Set the new EStore
 		if (resource instanceof TResource) {
-			eStore = ((TResource) resource).eStore();
+			eStore = ((TResource) resource).tStore();
 		} else {
 			eStore = new OwnedTransientTStoreImpl(this);
 		}

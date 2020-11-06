@@ -13,7 +13,11 @@ package edu.uoc.som.temf.map.impl;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Serializable;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -49,76 +53,30 @@ import edu.uoc.som.temf.core.TObject;
 import edu.uoc.som.temf.core.TResource;
 import edu.uoc.som.temf.core.impl.TObjectAdapterFactoryImpl;
 import edu.uoc.som.temf.core.impl.TObjectImpl;
-import edu.uoc.som.temf.estores.SearcheableResourceEStore;
 import edu.uoc.som.temf.estores.SearcheableResourceTStore;
 import edu.uoc.som.temf.estores.TStore;
 import edu.uoc.som.temf.estores.impl.IsSetCachingDelegatedTStoreImpl;
 import edu.uoc.som.temf.estores.impl.SizeCachingDelegatedTStoreImpl;
-import edu.uoc.som.temf.map.estores.impl.DirectWriteMapResourceTStoreImpl;
 
 public class MapTResourceImpl extends ResourceImpl implements TResource {
-
-	/**
-	 * Fake {@link EStructuralFeature} that represents the
-	 * {@link Resource#getContents()} feature.
-	 * 
-	 * @author agomez
-	 * 
-	 */
-	protected static class ResourceContentsEStructuralFeature extends EReferenceImpl {
-		protected static final String RESOURCE__CONTENTS__FEATURE_NAME = "eContents";
-
-		public ResourceContentsEStructuralFeature() {
-			this.setUpperBound(ETypedElement.UNBOUNDED_MULTIPLICITY);
-			this.setLowerBound(0);
-			this.setName(RESOURCE__CONTENTS__FEATURE_NAME);
-			this.setEType(new EClassifierImpl() {
-			});
-			this.setFeatureID(RESOURCE__CONTENTS);
-		}
-	}
-
-	/**
-	 * Dummy {@link EObject} that represents the root entry point for this
-	 * {@link Resource}
-	 * 
-	 * @author agomez
-	 * 
-	 */
-	protected final class DummyRootEObject extends TObjectImpl {
-		protected static final String ROOT_EOBJECT_ID = "ROOT";
-
-		public DummyRootEObject(Resource.Internal resource) {
-			super();
-			this.id = ROOT_EOBJECT_ID;
-			eSetDirectResource(resource);
-		}
-	}
 
 	protected static final ResourceContentsEStructuralFeature ROOT_CONTENTS_ESTRUCTURALFEATURE = new ResourceContentsEStructuralFeature();
 
 	protected final DummyRootEObject DUMMY_ROOT_EOBJECT = new DummyRootEObject(this);
 
-	protected SearcheableResourceTStore eStore;
+	protected SearcheableResourceTStore tStore;
 
 	protected MVStore mvStore;
 
 	protected boolean isPersistent = false;
+	
+	protected Clock clock = new NonRepeatingClock(ZoneOffset.UTC);
 
 	public MapTResourceImpl(URI uri) {
 		super(uri);
 		this.mvStore = new MVStore.Builder().fileStore(new OffHeapStore()).open();
-		this.eStore = new DirectWriteMapResourceTStoreImpl(this, mvStore);
+		this.tStore = new DirectWriteMapResourceTStoreImpl(this, mvStore);
 		this.isPersistent = false;
-	}
-
-	/**
-	 * Returns the graph DB file
-	 * 
-	 * @return
-	 */
-	protected File getFile() {
-		return FileUtils.getFile(TURI.createTURI(getURI().appendSegment("mvstore")).toFileString());
 	}
 
 	@Override
@@ -132,7 +90,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			} else {
 				this.mvStore = MVStore.open(getFile().getAbsolutePath());
 				this.isPersistent = true;
-				this.eStore = createResourceEStore(this.mvStore);
+				this.tStore = createResourceEStore(this.mvStore);
 			}
 			isLoaded = true;
 		} finally {
@@ -155,23 +113,32 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			mvStore.getMapNames().forEach(name -> newMvStore.openMap(name).putAll(mvStore.openMap(name)));
 			this.mvStore = newMvStore;
 			this.isPersistent = true;
-			this.eStore = createResourceEStore(this.mvStore);
+			this.tStore = createResourceEStore(this.mvStore);
 			this.isLoaded = true;
 		}
 
 		mvStore.commit();
 	}
 
+	protected File getFile() {
+		return FileUtils.getFile(TURI.createTURI(getURI().appendSegment("mvstore")).toFileString());
+	}
+
+	@Override
+	public TStore tStore() {
+		return tStore;
+	}
+
 	@Override
 	public EList<EObject> getContents() {
-		return new ResourceContentsEStoreEList(DUMMY_ROOT_EOBJECT, ROOT_CONTENTS_ESTRUCTURALFEATURE, eStore());
+		return new ResourceContentsEStoreEList(DUMMY_ROOT_EOBJECT, ROOT_CONTENTS_ESTRUCTURALFEATURE, tStore);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public EList<EObject> getContents(Instant instant) {
 		return ECollections.unmodifiableEList(
-				(EList<EObject>) (Object) ECollections.asEList(eStore().toArrayAt(instant, DUMMY_ROOT_EOBJECT, ROOT_CONTENTS_ESTRUCTURALFEATURE)));
+				(EList<EObject>) (Object) ECollections.asEList(tStore.toArrayAt(instant, DUMMY_ROOT_EOBJECT, ROOT_CONTENTS_ESTRUCTURALFEATURE)));
 	}
 
 	public TreeIterator<EObject> getAllContents(final Instant instant) {
@@ -188,7 +155,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 
 	@Override
 	public EObject getEObject(String uriFragment) {
-		EObject eObject = eStore.getEObject(uriFragment);
+		EObject eObject = tStore.getEObject(uriFragment);
 		if (eObject != null) {
 			return eObject;
 		} else {
@@ -210,10 +177,14 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 		return super.getURIFragment(eObject);
 	}
 
+	public static void shutdownWithoutUnload(MapTResourceImpl resource) {
+		resource.shutdown();
+	}
+
 	protected void shutdown() {
 		this.mvStore.close();
 		this.mvStore = new MVStore.Builder().fileStore(new OffHeapStore()).open();
-		this.eStore = new DirectWriteMapResourceTStoreImpl(this, mvStore);
+		this.tStore = new DirectWriteMapResourceTStoreImpl(this, mvStore);
 		this.isPersistent = false;
 	}
 
@@ -233,19 +204,112 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 		unload();
 	}
 
+	protected SearcheableResourceTStore createResourceEStore(MVStore mvStore) throws IOException {
+		return new IsSetCachingDelegatedTStoreImpl(new SizeCachingDelegatedTStoreImpl(new DirectWriteMapResourceTStoreImpl(this, mvStore)));
+	}
+
 	@Override
-	public TStore eStore() {
-		return eStore;
+	public Clock getClock() {
+		return clock;
+	}
+	
+
+    static final class NonRepeatingClock extends Clock implements Serializable {
+		// Dirty hack:
+		// Instant's precision is in the order of nanoseconds, however, 
+		// it's accuracy is usually lower (even in the order of a few 
+		// hundreds of nanoseconds). That means that multiple instants 
+		// created in a row may be virtually the same instant. To avoid 
+		// duplicate keys in the map (and thus missing values in the history),
+    	// we increment the instant in 1 nanosecond if the value is previous
+    	// or the same than the last call to get an instant.
+		// Hopefully, the number of subsequent calls to get Instants will 
+		// be low enough to avoid a big error accumulation 
+        private static final long serialVersionUID = 1L;
+        private final Clock clock;
+        private Instant lastInstant = Instant.MIN;
+
+        NonRepeatingClock(ZoneId zone) {
+            this.clock = Clock.system(zone); 
+        }
+        @Override
+        public ZoneId getZone() {
+            return clock.getZone();
+        }
+        @Override
+        public Clock withZone(ZoneId zone) {
+            if (zone.equals(getZone())) {
+                return this;
+            }
+            return new NonRepeatingClock(zone);
+        }
+        @Override
+        public long millis() {
+            return clock.millis();
+        }
+        @Override
+        public Instant instant() {
+        	synchronized (lastInstant) {
+        		Instant readInstant = clock.instant();
+        		while (readInstant.isBefore(lastInstant) || readInstant.equals(lastInstant)) {
+        			readInstant = readInstant.plusNanos(1);
+        		}
+        		lastInstant = readInstant;
+			}
+        	return lastInstant;
+        }
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof NonRepeatingClock) {
+                return clock.equals(((NonRepeatingClock) obj).clock);
+            }
+            return false;
+        }
+        @Override
+        public int hashCode() {
+            return clock.hashCode() + 1;
+        }
+        @Override
+        public String toString() {
+            return "NonRepeatingClock[" + clock.getZone() + "]";
+        }
+    }
+
+	/**
+	 * Fake {@link EStructuralFeature} that represents the
+	 * {@link Resource#getContents()} feature.
+	 * 
+	 * @author agomez
+	 * 
+	 */
+	protected static class ResourceContentsEStructuralFeature extends EReferenceImpl {
+		protected static final String RESOURCE__CONTENTS__FEATURE_NAME = "eContents";
+	
+		public ResourceContentsEStructuralFeature() {
+			this.setUpperBound(ETypedElement.UNBOUNDED_MULTIPLICITY);
+			this.setLowerBound(0);
+			this.setName(RESOURCE__CONTENTS__FEATURE_NAME);
+			this.setEType(new EClassifierImpl() {
+			});
+			this.setFeatureID(RESOURCE__CONTENTS);
+		}
 	}
 
 	/**
-	 * Creates the {@link SearcheableResourceEStore} used by this {@link Resource}.
+	 * Dummy {@link EObject} that represents the root entry point for this
+	 * {@link Resource}
 	 * 
-	 * @param graph
-	 * @return
+	 * @author agomez
+	 * 
 	 */
-	protected SearcheableResourceTStore createResourceEStore(MVStore mvStore) throws IOException {
-		return new IsSetCachingDelegatedTStoreImpl(new SizeCachingDelegatedTStoreImpl(new DirectWriteMapResourceTStoreImpl(this, mvStore)));
+	protected final class DummyRootEObject extends TObjectImpl {
+		protected static final String ROOT_EOBJECT_ID = "ROOT";
+	
+		public DummyRootEObject(Resource.Internal resource) {
+			super();
+			this.id = ROOT_EOBJECT_ID;
+			eSetDirectResource(resource);
+		}
 	}
 
 	/**
@@ -257,11 +321,11 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 	 */
 	protected class ResourceContentsEStoreEList extends EStoreEObjectImpl.EStoreEList<EObject> {
 		protected static final long serialVersionUID = 1L;
-
+	
 		protected ResourceContentsEStoreEList(InternalEObject owner, EStructuralFeature eStructuralFeature, EStore store) {
 			super(owner, eStructuralFeature, store);
 		}
-
+	
 		@Override
 		protected EObject validate(int index, EObject object) {
 			if (!canContainNull() && object == null) {
@@ -269,37 +333,37 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			}
 			return object;
 		}
-
+	
 		@Override
 		public Object getNotifier() {
 			return MapTResourceImpl.this;
 		}
-
+	
 		@Override
 		public int getFeatureID() {
 			return RESOURCE__CONTENTS;
 		}
-
+	
 		@Override
 		protected boolean isNotificationRequired() {
 			return MapTResourceImpl.this.eNotificationRequired();
 		}
-
+	
 		@Override
 		protected boolean useEquals() {
 			return false;
 		}
-
+	
 		@Override
 		protected boolean hasInverse() {
 			return true;
 		}
-
+	
 		@Override
 		protected boolean isUnique() {
 			return true;
 		}
-
+	
 		@Override
 		public NotificationChain inverseAdd(EObject object, NotificationChain notifications) {
 			InternalEObject eObject = (InternalEObject) object;
@@ -307,7 +371,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			MapTResourceImpl.this.attached(eObject);
 			return notifications;
 		}
-
+	
 		@Override
 		public NotificationChain inverseRemove(EObject object, NotificationChain notifications) {
 			InternalEObject eObject = (InternalEObject) object;
@@ -316,7 +380,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			}
 			return eObject.eSetResource(null, notifications);
 		}
-
+	
 		@Override
 		protected void delegateAdd(int index, EObject object) {
 			// FIXME? Maintain a list of hard links to the elements while moving
@@ -335,7 +399,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			hardLinksList.forEach(e -> TObjectAdapterFactoryImpl.getAdapter(e, InternalTObject.class).tSetResource(MapTResourceImpl.this));
 			super.delegateAdd(index, object);
 		}
-
+	
 		@Override
 		protected EObject delegateRemove(int index) {
 			EObject object = super.delegateRemove(index);
@@ -354,7 +418,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			}
 			return object;
 		}
-
+	
 		@Override
 		protected void didAdd(int index, EObject object) {
 			super.didAdd(index, object);
@@ -363,19 +427,19 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			}
 			modified();
 		}
-
+	
 		@Override
 		protected void didRemove(int index, EObject object) {
 			super.didRemove(index, object);
 			modified();
 		}
-
+	
 		@Override
 		protected void didSet(int index, EObject newObject, EObject oldObject) {
 			super.didSet(index, newObject, oldObject);
 			modified();
 		}
-
+	
 		@Override
 		protected void didClear(int oldSize, Object[] oldData) {
 			if (oldSize == 0) {
@@ -384,7 +448,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 				super.didClear(oldSize, oldData);
 			}
 		}
-
+	
 		protected void loaded() {
 			if (!MapTResourceImpl.this.isLoaded()) {
 				Notification notification = MapTResourceImpl.this.setLoaded(true);
@@ -393,15 +457,11 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 				}
 			}
 		}
-
+	
 		protected void modified() {
 			if (isTrackingModification()) {
 				setModified(true);
 			}
 		}
-	}
-
-	public static void shutdownWithoutUnload(MapTResourceImpl resource) {
-		resource.shutdown();
 	}
 }

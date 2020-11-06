@@ -8,7 +8,7 @@
  * Contributors:
  *     Abel Gómez - initial API and implementation
  *******************************************************************************/
-package edu.uoc.som.temf.map.estores.impl;
+package edu.uoc.som.temf.map.impl;
 
 import java.io.Serializable;
 import java.text.MessageFormat;
@@ -39,6 +39,7 @@ import com.google.common.cache.LoadingCache;
 import edu.uoc.som.temf.Logger;
 import edu.uoc.som.temf.core.InternalTObject;
 import edu.uoc.som.temf.core.TObject;
+import edu.uoc.som.temf.core.TResource;
 import edu.uoc.som.temf.core.exceptions.EClassNotFoundException;
 import edu.uoc.som.temf.core.impl.TObjectAdapterFactoryImpl;
 import edu.uoc.som.temf.estores.SearcheableResourceTStore;
@@ -71,11 +72,11 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 
 	protected MVMap<ContainerKey, ContainerInfo> containersMap; // Object[] must be an array of { String, Date }
 	
-	protected Resource.Internal resource;
+	protected TResource resource;
 
-	public DirectWriteMapResourceTStoreImpl(Resource.Internal resource, MVStore mvStore) {
+	DirectWriteMapResourceTStoreImpl(TResource resource, MVStore mvStore) {
 		this.mvStore = mvStore;
-		this.resource = resource;
+		this.resource = (TResource) resource;
 		this.dataMap = mvStore.openMap(DATA);
 		this.instanceOfMap = mvStore.openMap(INSTANCE_OF);
 		this.containersMap = mvStore.openMap(CONTAINER);
@@ -172,13 +173,13 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 
 	protected Object set(TObject object, EAttribute eAttribute, int index, Object value) {
 		if (!eAttribute.isMany()) {
-			Object oldValue = dataMap.put(DataKey.from(object.tId(), eAttribute.getName()), serializeToMapValue(eAttribute, value));
+			Object oldValue = dataMap.put(DataKey.from(object.tId(), eAttribute.getName(), now()), serializeToMapValue(eAttribute, value));
 			return parseMapValue(eAttribute, oldValue);
 		} else {
 			Object[] array = (Object[]) getFromDataMap(object, eAttribute);
 			Object oldValue = array[index]; 
 			array[index] = serializeToMapValue(eAttribute, value);
-			dataMap.put(DataKey.from(object.tId(), eAttribute.getName()), array);
+			dataMap.put(DataKey.from(object.tId(), eAttribute.getName(), now()), array);
 			return parseMapValue(eAttribute, oldValue);
 		}
 	}
@@ -187,13 +188,13 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 		updateContainment(object, eReference, referencedObject);
 		updateInstanceOf(referencedObject);
 		if (!eReference.isMany()) {
-			Object oldId = dataMap.put(DataKey.from(object.tId(), eReference.getName()), referencedObject.tId());
+			Object oldId = dataMap.put(DataKey.from(object.tId(), eReference.getName(), now()), referencedObject.tId());
 			return oldId != null ? getEObject((String) oldId) : null;
 		} else {
 			Object[] array = (Object[]) getFromDataMap(object, eReference);
 			Object oldId = array[index];
 			array[index] = referencedObject.tId();
-			dataMap.put(DataKey.from(object.tId(), eReference.getName()), array);
+			dataMap.put(DataKey.from(object.tId(), eReference.getName(), now()), array);
 			return oldId != null ? getEObject((String) oldId) : null;
 		}
 	}
@@ -231,7 +232,7 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 			array = new Object[] {};
 		}
 		array = ArrayUtils.add(array, index, serializeToMapValue(eAttribute, value));
-		dataMap.put(DataKey.from(object.tId(), eAttribute.getName()), array);
+		dataMap.put(DataKey.from(object.tId(), eAttribute.getName(), now()), array);
 	}
 
 	protected void add(TObject object, EReference eReference, int index, TObject referencedObject) {
@@ -242,7 +243,7 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 			array = new Object[] {};
 		}
 		array = ArrayUtils.add(array, index, referencedObject.tId());
-		dataMap.put(DataKey.from(object.tId(), eReference.getName()), array);
+		dataMap.put(DataKey.from(object.tId(), eReference.getName(), now()), array);
 	}
 
 	@Override
@@ -261,7 +262,7 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 		Object[] array = (Object[]) getFromDataMap(object, eAttribute);
 		Object oldValue = array[index];
 		array = ArrayUtils.remove(array, index);
-		dataMap.put(DataKey.from(object.tId(), eAttribute.getName()), array);
+		dataMap.put(DataKey.from(object.tId(), eAttribute.getName(), now()), array);
 		return parseMapValue(eAttribute, oldValue);
 	}
 
@@ -269,7 +270,7 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 		Object[] array = (Object[]) getFromDataMap(object, eReference);
 		Object oldId = array[index];
 		array = ArrayUtils.remove(array, index);
-		dataMap.put(DataKey.from(object.tId(), eReference.getName()), array);
+		dataMap.put(DataKey.from(object.tId(), eReference.getName(), now()), array);
 		return getEObject((String) oldId);
 
 	}
@@ -285,7 +286,7 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 	@Override
 	public void unset(InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		dataMap.remove(DataKey.from(tObject.tId(), feature.getName()));
+		dataMap.remove(DataKey.from(tObject.tId(), feature.getName(), now()));
 	}
 
 	@Override
@@ -363,7 +364,7 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 	@Override
 	public void clear(InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		dataMap.put(DataKey.from(tObject.tId(), feature.getName()), new Object[] {});
+		dataMap.put(DataKey.from(tObject.tId(), feature.getName(), now()), new Object[] {});
 	}
 
 	@Override
@@ -509,9 +510,9 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 	
 	protected void updateContainment(TObject object, EReference eReference, TObject referencedObject) {
 		if (eReference.isContainment()) {
-			ContainerInfo lower = containersMap.get(containersMap.ceilingKey(ContainerKey.from(referencedObject.tId())));
+			ContainerInfo lower = containersMap.get(containersMap.ceilingKey(ContainerKey.from(referencedObject.tId(), now())));
 			if (lower == null || !StringUtils.equals(lower.containerId, object.tId())) {
-				containersMap.put(ContainerKey.from(referencedObject.tId()), ContainerInfo.from(object.tId(), eReference.getName()));
+				containersMap.put(ContainerKey.from(referencedObject.tId(), now()), ContainerInfo.from(object.tId(), eReference.getName()));
 			}
 		}
 	}
@@ -569,27 +570,8 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 		return result; 
 	}
 
-	private static Instant lastInstant = Instant.MIN;
-	
-	private static Instant now() {
-		// Dirty hack:
-		// Instant's precision is in the order of nanoseconds, however, 
-		// it's accuracy is usually lower (even in the order of a few 
-		// hundreds of nanoseconds). That means that multiple instants 
-		// created in a row may be virtually the same instant. To avoid 
-		// duplicate keys in the map (and thus missing values), we increment 
-		// the instant in 1 nanosecond if the value is previous or the same
-		// than the last call to this method.
-		// Hopefully, the number of subsequent calls to this method will 
-		// be low enough to avoid a big error accumulation 
-		synchronized (lastInstant) {
-			Instant readInstant = Instant.now();
-			while (readInstant.isBefore(lastInstant) || readInstant.equals(lastInstant)) {
-				readInstant = readInstant.plusNanos(1);
-			}
-			lastInstant = readInstant;
-			return lastInstant;
-		}
+	private Instant now() {
+		return resource.getClock().instant();
 	}
 	
 	private static class DataKey implements Serializable {
@@ -608,10 +590,6 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 		
 		public static DataKey from(String id, String feature, Instant instant) {
 			return new DataKey(id, feature, instant);
-		}
-
-		public static DataKey from(String id, String feature) {
-			return DataKey.from(id, feature, now());
 		}
 
 		@Override
@@ -668,10 +646,6 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 		
 		public static ContainerKey from(String id, Instant instant) {
 			return new ContainerKey(id, instant);
-		}
-
-		public static ContainerKey from(String id) {
-			return ContainerKey.from(id, now());
 		}
 
 		@Override
