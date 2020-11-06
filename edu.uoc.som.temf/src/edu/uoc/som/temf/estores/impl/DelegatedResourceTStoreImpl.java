@@ -48,11 +48,6 @@ public class DelegatedResourceTStoreImpl implements SearcheableResourceTStore {
 		return tStore.getEObject(id);
 	}
 
-	@Override
-	public EObject getEObjectAt(Instant instant, String id) {
-		return tStore.getEObjectAt(instant, id);
-	}
-	
 	public Object getAt(Instant instant, InternalEObject object, EStructuralFeature feature, int index) {
 		return tStore.getAt(instant, object, feature, index);
 	}
