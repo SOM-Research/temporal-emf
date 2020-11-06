@@ -1,0 +1,2 @@
+Keep an eye in `platform:/plugin/org.eclipse.emf.codegen.ecore/templates/model/manifest.mfjet` to see when Java 11 is supported.
+Then, the file `templates/model/manifest.mfjet` can be deleted.
