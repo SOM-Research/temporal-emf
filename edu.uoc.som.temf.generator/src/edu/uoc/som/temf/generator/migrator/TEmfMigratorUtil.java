@@ -60,10 +60,10 @@ public abstract class TEmfMigratorUtil {
 	public static String adjustGenModel(GenModel genModel) {
 		StringBuilder builder = new StringBuilder();
 
-		if (genModel.getComplianceLevel() != GenJDKLevel.JDK110_LITERAL) {
-			genModel.setComplianceLevel(GenJDKLevel.JDK110_LITERAL);
+		if (genModel.getComplianceLevel() != GenJDKLevel.JDK80_LITERAL) {
+			genModel.setComplianceLevel(GenJDKLevel.JDK80_LITERAL);
 			builder.append("Set Compliance Level = ");
-			builder.append(GenJDKLevel.JDK110_LITERAL);
+			builder.append(GenJDKLevel.JDK80_LITERAL);
 			builder.append("\n");
 		}
 
