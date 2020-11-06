@@ -13,13 +13,11 @@ package edu.uoc.som.temf.map.impl;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.emf.common.notify.Notification;
@@ -49,7 +47,6 @@ import edu.uoc.som.temf.TURI;
 import edu.uoc.som.temf.core.InternalTObject;
 import edu.uoc.som.temf.core.TObject;
 import edu.uoc.som.temf.core.TResource;
-import edu.uoc.som.temf.core.exceptions.InvalidOptionsException;
 import edu.uoc.som.temf.core.impl.TObjectAdapterFactoryImpl;
 import edu.uoc.som.temf.core.impl.TObjectImpl;
 import edu.uoc.som.temf.estores.SearcheableResourceEStore;
@@ -102,8 +99,6 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 
 	protected final DummyRootEObject DUMMY_ROOT_EOBJECT = new DummyRootEObject(this);
 
-	protected Map<?, ?> options;
-
 	protected SearcheableResourceTStore eStore;
 
 	protected MVStore mvStore;
@@ -139,7 +134,6 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 				this.isPersistent = true;
 				this.eStore = createResourceEStore(this.mvStore);
 			}
-			this.options = options;
 			isLoaded = true;
 		} finally {
 			isLoading = false;
@@ -148,20 +142,6 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 
 	@Override
 	public void save(Map<?, ?> options) throws IOException {
-
-		if (this.options != null) {
-			// Check that the save options do not collide with previous load options
-			for (Entry<?, ?> entry : options.entrySet()) {
-				Object key = entry.getKey();
-				Object value = entry.getValue();
-				if (this.options.containsKey(key) && value != null) {
-					if (!value.equals(this.options.get(key))) {
-						throw new IOException(new InvalidOptionsException(MessageFormat.format("key = {0}; value = {1}", key.toString(), value.toString())));
-					}
-				}
-			}
-		}
-
 		if (!isLoaded() || !this.isPersistent) {
 			if (!getFile().getParentFile().exists()) {
 				getFile().getParentFile().mkdirs();
@@ -169,10 +149,10 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			MVStore newMvStore = MVStore.open(getFile().getAbsolutePath());
 			if (!newMvStore.getMapNames().isEmpty()) {
 				Logger.log(Logger.SEVERITY_WARNING,
-						NLS.bind("Saving on existing db {0} without previously loading its contents. " + "DB contents will be lost.", getFile().toString()));
+						NLS.bind("Saving on existing store {0} without previously loading its contents. Contents will be lost.", getFile().toString()));
 				newMvStore.getMapNames().forEach(name -> newMvStore.openMap(name).clear());
 			}
-			// TODO: Copy in memory map to persistent map
+			mvStore.getMapNames().forEach(name -> newMvStore.openMap(name).putAll(mvStore.openMap(name)));
 			this.mvStore = newMvStore;
 			this.isPersistent = true;
 			this.eStore = createResourceEStore(this.mvStore);
