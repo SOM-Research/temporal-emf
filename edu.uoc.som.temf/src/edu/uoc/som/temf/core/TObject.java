@@ -21,9 +21,11 @@ public interface TObject extends EObject {
 
 	String tId();
 
-	EList<EObject> eContents(Instant instant);
+	EList<EObject> eContentsAt(Instant instant);
 
 	EObject eContainerAt(Instant instant);
+	
+	EStructuralFeature eContainingFeatureAt(Instant instant);
 	
 	Object eGetAt(Instant instant, EStructuralFeature feature);
 

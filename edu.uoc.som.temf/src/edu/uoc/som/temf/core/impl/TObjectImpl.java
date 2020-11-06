@@ -69,6 +69,16 @@ public class TObjectImpl extends MinimalEStoreEObjectImpl implements InternalTOb
 	}
 
 	@Override
+	public String eURIFragmentSegment(EStructuralFeature eStructuralFeature, EObject eObject) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public EObject eObjectForURIFragmentSegment(String uriFragmentSegment) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public InternalEObject eInternalContainer() {
 		return eContainer;
 	}
@@ -122,6 +132,11 @@ public class TObjectImpl extends MinimalEStoreEObjectImpl implements InternalTOb
 		eContainerFeatureID = newContainerFeatureID;
 	}
 
+	@Override
+	public EStructuralFeature eContainingFeatureAt(Instant instant) {
+		return eStore().getContainingFeatureAt(instant, this);
+	}
+	
 	@Override
 	public Resource eResource() {
 		if (tResource != null) {
@@ -181,7 +196,7 @@ public class TObjectImpl extends MinimalEStoreEObjectImpl implements InternalTOb
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public EList<EObject> eContents(Instant instant) {
+	public EList<EObject> eContentsAt(Instant instant) {
 		EStructuralFeature[] eStructuralFeatures = ((EClassImpl.FeatureSubsetSupplier) this.eClass()
 				.getEAllStructuralFeatures()).containments();
 

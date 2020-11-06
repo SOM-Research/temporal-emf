@@ -148,7 +148,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			@Override
 			public Iterator<EObject> getChildren(Object object) {
 				return object == MapTResourceImpl.this ? MapTResourceImpl.this.getContents(instant).iterator()
-						: ((TObject) object).eContents(instant).iterator();
+						: ((TObject) object).eContentsAt(instant).iterator();
 			}
 		};
 	}
