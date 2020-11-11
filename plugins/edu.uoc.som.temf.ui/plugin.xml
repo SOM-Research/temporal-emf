@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.emf.importer.modelImporterDescriptors">
+      <modelImporterDescriptor
+            description="Create the Ecore model based on other Ecore or EMOF models"
+            extensions="ecore,emof"
+            icon="icons/full/obj16/TEmfModelFile.gif"
+            id="edu.uoc.som.temf.ui.modelImporterDescriptor"
+            name="Ecore model (TemporalEMF Native)"
+            wizard="edu.uoc.som.temf.ui.wizards.TEmfModelImporterWizard">
+      </modelImporterDescriptor>
+   </extension>
+</plugin>

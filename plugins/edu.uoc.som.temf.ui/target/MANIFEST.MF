@@ -1,0 +1,18 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: TemporalEMF UI Plugin
+Bundle-SymbolicName: edu.uoc.som.temf.ui;singleton:=true
+Bundle-Version: 0.1.0.202011112040
+Bundle-Activator: edu.uoc.som.temf.ui.TEmfUiPlugin
+Bundle-Vendor: SOM Research Lab
+Require-Bundle: org.eclipse.core.runtime,org.eclipse.core.resources,org.
+ eclipse.core.commands,org.eclipse.core.expressions,org.eclipse.ui,org.e
+ clipse.ui.ide,org.eclipse.jface,org.eclipse.emf,org.eclipse.emf.ecore.x
+ mi,org.eclipse.emf.edit,org.eclipse.emf.edit.ui,org.eclipse.emf.convert
+ er,org.eclipse.emf.importer,org.eclipse.emf.ecore.editor,edu.uoc.som.te
+ mf;bundle-version="0.1.0",edu.uoc.som.temf.generator;bundle-version="0.
+ 1.0"
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-ActivationPolicy: lazy
+Automatic-Module-Name: edu.uoc.som.temf.ui
+

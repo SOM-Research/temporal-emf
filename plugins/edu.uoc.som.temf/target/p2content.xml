@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<units size='1'>
+  <unit id='edu.uoc.som.temf' version='0.1.0.202011112040' generation='2'>
+    <update id='edu.uoc.som.temf' range='[0.0.0,0.1.0.202011112040)' severity='0'/>
+    <properties size='5'>
+      <property name='org.eclipse.equinox.p2.name' value='TemporalEMF Plug-in'/>
+      <property name='org.eclipse.equinox.p2.provider' value='SOM Research Lab'/>
+      <property name='maven-groupId' value='edu.uoc.som.temf'/>
+      <property name='maven-artifactId' value='edu.uoc.som.temf'/>
+      <property name='maven-version' value='0.1.0-SNAPSHOT'/>
+    </properties>
+    <provides size='11'>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='edu.uoc.som.temf' version='0.1.0.202011112040'/>
+      <provided namespace='osgi.bundle' name='edu.uoc.som.temf' version='0.1.0.202011112040'/>
+      <provided namespace='java.package' name='edu.uoc.som.temf' version='0.0.0'/>
+      <provided namespace='java.package' name='edu.uoc.som.temf.core' version='0.0.0'/>
+      <provided namespace='java.package' name='edu.uoc.som.temf.core.exceptions' version='0.0.0'/>
+      <provided namespace='java.package' name='edu.uoc.som.temf.core.impl' version='0.0.0'/>
+      <provided namespace='java.package' name='edu.uoc.som.temf.estores' version='0.0.0'/>
+      <provided namespace='java.package' name='edu.uoc.som.temf.estores.impl' version='0.0.0'/>
+      <provided namespace='java.package' name='edu.uoc.som.temf.map.impl' version='0.0.0'/>
+      <provided namespace='osgi.identity' name='edu.uoc.som.temf' version='0.1.0.202011112040'>
+        <properties size='1'>
+          <property name='type' value='osgi.bundle'/>
+        </properties>
+      </provided>
+      <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='bundle' version='1.0.0'/>
+    </provides>
+    <requires size='8'>
+      <required namespace='osgi.bundle' name='org.eclipse.core.runtime' range='3.13.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.emf.ecore' range='2.13.0'/>
+      <required namespace='osgi.bundle' name='org.apache.commons.io' range='2.2.0'/>
+      <required namespace='osgi.bundle' name='org.apache.commons.lang3' range='3.1.0'/>
+      <required namespace='osgi.bundle' name='net.bytebuddy.byte-buddy' range='1.9.0'/>
+      <required namespace='osgi.bundle' name='com.google.guava' range='27.1.0'/>
+      <required namespace='osgi.bundle' name='com.h2database' range='1.4.200'/>
+      <requiredProperties namespace='osgi.ee' match='(&amp;(osgi.ee=JavaSE)(version=1.8))'>
+        <description>
+          edu.uoc.som.temf
+        </description>
+      </requiredProperties>
+    </requires>
+    <artifacts size='1'>
+      <artifact classifier='osgi.bundle' id='edu.uoc.som.temf' version='0.1.0.202011112040'/>
+    </artifacts>
+    <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+    <touchpointData size='1'>
+      <instructions size='1'>
+        <instruction key='manifest'>
+          Bundle-SymbolicName: edu.uoc.som.temf;singleton:=true&#xA;Bundle-Version: 0.1.0.202011112040&#xA;
+        </instruction>
+      </instructions>
+    </touchpointData>
+  </unit>
+</units>
