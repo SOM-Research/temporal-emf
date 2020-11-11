@@ -1,0 +1,12 @@
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>edu.uoc.som.temf</groupId>
+    <artifactId>releng</artifactId>
+    <version>${revision}</version>
+  </parent>
+  <groupId>edu.uoc.som.temf</groupId>
+  <artifactId>platform</artifactId>
+  <version>${revision}</version>
+  <packaging>eclipse-target-definition</packaging>
+</project>
