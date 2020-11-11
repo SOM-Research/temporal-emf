@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: TemporalEMF Generator Plug-in
 Bundle-SymbolicName: edu.uoc.som.temf.generator;singleton:=true
-Bundle-Version: 0.1.0.qualifier
+Bundle-Version: 0.2.0.qualifier
 Automatic-Module-Name: edu.uoc.som.temf.genmodel
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Bundle-Vendor: SOM Research Lab

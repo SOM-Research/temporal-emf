@@ -2,7 +2,7 @@
 <feature
       id="edu.uoc.som.temf.feature"
       label="TemporalEMF Persistence Store"
-      version="0.1.0.qualifier"
+      version="0.2.0.qualifier"
       provider-name="SOM Research Lab">
 
    <description url="https://github.com/SOM-Research/temporal-emf">
@@ -136,14 +136,21 @@ This Agreement is governed by the laws of the State of New York and the intellec
          id="edu.uoc.som.temf"
          download-size="0"
          install-size="0"
-         version="0.1.0.qualifier"
+         version="0.2.0.qualifier"
          unpack="false"/>
 
    <plugin
          id="edu.uoc.som.temf.ui"
          download-size="0"
          install-size="0"
-         version="0.1.0.qualifier"
+         version="0.2.0.qualifier"
+         unpack="false"/>
+
+   <plugin
+         id="edu.uoc.som.temf.generator"
+         download-size="0"
+         install-size="0"
+         version="0.2.0.qualifier"
          unpack="false"/>
 
 </feature>
