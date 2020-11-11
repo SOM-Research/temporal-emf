@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <description name="TemporalEMF" url="https://som-research.github.io/temporal-emf/updates/">
+      The TemporalEMF persistence layer
+   </description>
+   <feature id="edu.uoc.som.temf.feature">
+      <category name="TemporalEMF"/>
+   </feature>
+   <category-def name="TemporalEMF" label="TemporalEMF">
+      <description>
+         The TemporalEMF time-aware metamodeling framework and persistence layer
+      </description>
+   </category-def>
+</site>
