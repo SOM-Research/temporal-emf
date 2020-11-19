@@ -1,7 +1,7 @@
 <project>
   <modelVersion>4.0.0</modelVersion>
   <groupId>edu.uoc.som.temf</groupId>
-  <artifactId>releng</artifactId>
+  <artifactId>root</artifactId>
   <version>${revision}</version>
   <packaging>pom</packaging>
   <properties>
@@ -9,6 +9,11 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <revision>0.2.0-SNAPSHOT</revision>
   </properties>
+  <modules>
+    <module>plugins</module>
+    <module>features</module>
+    <module>releng</module>
+  </modules>
   <build>
     <pluginManagement>
       <plugins>
@@ -60,10 +65,4 @@
       </plugin>
     </plugins>
   </build>
-  <modules>
-    <module>plugins</module>
-    <module>features</module>
-    <module>target-platform</module>
-    <module>releng-updatesite</module>
-  </modules>
 </project>
