@@ -41,10 +41,10 @@ public abstract class TEmfMigratorUtil {
 
 	private static final String ROOT_EXTENDS_INTERFACE = TObject.class.getName();
 
-	public static final String PLUGIN_VARIABLE_TEMF = "TEMF=" + TEmfPlugin.PLUGIN_ID;
+	private static final String PLUGIN_VARIABLE_TEMF = "TEMF=" + TEmfPlugin.PLUGIN_ID;
 
 	// @formatter:off
-	public static final String[] PLUGIN_DEPENDENCIES = { "org.apache.commons.io",
+	private static final String[] PLUGIN_DEPENDENCIES = { "org.apache.commons.io",
 															"org.apache.commons.lang3",
 															"net.bytebuddy.byte-buddy",
 															"com.google.guava",
@@ -113,27 +113,6 @@ public abstract class TEmfMigratorUtil {
 				builder.append(dep);
 			});
 			builder.append("\n");
-		}
-
-		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-		IFolder modelFolder = root.getFolder(new Path(genModel.getModelDirectory()));
-		IProject modelProject = modelFolder.getProject();
-		if (!modelProject.exists()) {
-			try {
-				modelProject.create(new NullProgressMonitor());
-				builder.append("Created target model project" + "\n"); //$NON-NLS-2$
-			} catch (CoreException ex) {
-				throw new WrappedException(ex);
-			}
-		}
-
-		if (!modelProject.isOpen()) {
-			try {
-				modelProject.open(new NullProgressMonitor());
-				builder.append("Opened target model project" + "\n"); //$NON-NLS-2$
-			} catch (CoreException ex) {
-				throw new WrappedException(ex);
-			}
 		}
 
 		return builder.length() == 0 ? null : builder.toString();

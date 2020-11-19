@@ -13,6 +13,13 @@ package edu.uoc.som.temf.ui.migrator;
 import java.text.MessageFormat;
 import java.util.List;
 
+import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.codegen.ecore.genmodel.GenModel;
 import org.eclipse.emf.codegen.ecore.genmodel.GenPackage;
 import org.eclipse.emf.common.util.BasicDiagnostic;
@@ -21,6 +28,7 @@ import org.eclipse.emf.common.util.DiagnosticException;
 import org.eclipse.emf.common.util.Monitor;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.common.util.UniqueEList;
+import org.eclipse.emf.common.util.WrappedException;
 import org.eclipse.emf.converter.ConverterPlugin;
 import org.eclipse.emf.converter.util.ConverterUtil;
 import org.eclipse.emf.ecore.EPackage;
@@ -109,7 +117,29 @@ public class TEmfImporter extends ModelImporter {
 			genModel.getForeignModel().add(makeRelative(uri, genModelURI).toString());
 		}
 
-		TEmfMigratorUtil.adjustGenModel(genModel);
+		StringBuilder builder = new StringBuilder();
+
+		builder.append(TEmfMigratorUtil.adjustGenModel(genModel));
+		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		IFolder modelFolder = root.getFolder(new Path(genModel.getModelDirectory()));
+		IProject modelProject = modelFolder.getProject();
+		if (!modelProject.exists()) {
+			try {
+				modelProject.create(new NullProgressMonitor());
+				builder.append("Created target model project" + "\n"); //$NON-NLS-2$
+			} catch (CoreException ex) {
+				throw new WrappedException(ex);
+			}
+		}
+
+		if (!modelProject.isOpen()) {
+			try {
+				modelProject.open(new NullProgressMonitor());
+				builder.append("Opened target model project" + "\n"); //$NON-NLS-2$
+			} catch (CoreException ex) {
+				throw new WrappedException(ex);
+			}
+		}
 	}
 
 	@Override
