@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <description name="TemporalEMF" url="https://som-research.github.io/temporal-emf/updates/">
-      The TemporalEMF persistence layer
-   </description>
    <feature id="edu.uoc.som.temf.feature">
       <category name="TemporalEMF"/>
    </feature>
@@ -11,4 +8,6 @@
          The TemporalEMF time-aware metamodeling framework and persistence layer
       </description>
    </category-def>
+   <repository-reference location="https://abelgomez.github.io/eclipse.orbit/updates/" enabled="true" />
+   <repository-reference location="https://download.eclipse.org/tools/orbit/downloads/drops/R20200831200620/repository/" enabled="true" />
 </site>
