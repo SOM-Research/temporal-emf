@@ -66,20 +66,26 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 	
 	protected MVStore mvStore;
 	
-	protected MVMap<DataKey, Object> dataMap; // Object[] must be an array of { String, String, Date }
+	protected MVMap<DataKey, Object> dataMap;
 	
 	protected MVMap<String, EClassInfo> instanceOfMap;
 
-	protected MVMap<ContainerKey, ContainerInfo> containersMap; // Object[] must be an array of { String, Date }
+	protected MVMap<ContainerKey, ContainerInfo> containersMap;
 	
 	protected TResource resource;
 
 	DirectWriteMapResourceTStoreImpl(TResource resource, MVStore mvStore) {
-		this.mvStore = mvStore;
-		this.resource = (TResource) resource;
-		this.dataMap = mvStore.openMap(DATA);
-		this.instanceOfMap = mvStore.openMap(INSTANCE_OF);
-		this.containersMap = mvStore.openMap(CONTAINER);
+		try {
+			this.mvStore = mvStore;
+			this.resource = (TResource) resource;
+			this.dataMap = mvStore.openMap(DATA);
+			this.instanceOfMap = mvStore.openMap(INSTANCE_OF);
+			this.containersMap = mvStore.openMap(CONTAINER);
+		} catch (IllegalStateException e) {
+			String message = MessageFormat.format("Can't read/deserialize MVStore '{0}'. Possible file curruption or classpath error.", mvStore.getFileStore());
+			Logger.log(Logger.SEVERITY_ERROR, message);
+			throw new RuntimeException(message, e);
+		}
 	}
 
 
