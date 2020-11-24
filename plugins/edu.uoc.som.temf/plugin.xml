@@ -5,7 +5,7 @@
          point="org.eclipse.emf.ecore.protocol_parser">
       <parser
             class="edu.uoc.som.temf.core.impl.TResourceFactoryImpl"
-            protocolName="temf-hbase">
+            protocolName="temf-map">
       </parser>
    </extension>
 </plugin>
