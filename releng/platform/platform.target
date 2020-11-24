@@ -3,10 +3,6 @@
 <target name="Temporal EMF Target Platform" sequenceNumber="3">
 <locations>
 	<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
-		<repository location="https://abelgomez.github.io/eclipse.orbit/updates/"/>
-		<unit id="com.h2database.feature.feature.group" version="1.4.200.202011051858"/>
-	</location>
-	<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
 		<repository location="http://download.eclipse.org/eclipse/updates/4.17/"/>
 		<unit id="org.eclipse.sdk.ide" version="4.17.0.I20200902-1800"/>
 	</location>
@@ -24,6 +20,10 @@
 		<unit id="org.apache.commons.io.source" version="2.6.0.v20190123-2029"/>
 		<unit id="org.apache.commons.lang3" version="3.1.0.v201403281430"/>
 		<unit id="org.apache.commons.lang3.source" version="3.1.0.v201403281430"/>
+	</location>
+	<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+		<repository location="https://abelgomez.github.io/eclipse.orbit/updates/"/>
+		<unit id="com.h2database.feature.feature.group" version="1.4.200.202011241924"/>
 	</location>
 </locations>
 	<targetJRE path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
