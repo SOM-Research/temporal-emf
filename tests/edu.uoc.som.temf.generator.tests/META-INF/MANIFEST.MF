@@ -1,0 +1,19 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: TemporalEMF Generator Tests Plug-in
+Bundle-SymbolicName: edu.uoc.som.temf.generator.tests;singleton:=true
+Bundle-Version: 0.2.0.qualifier
+Bundle-ClassPath: .
+Automatic-Module-Name: edu.uoc.som.temf.generator.tests
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-Vendor: SOM Research Lab
+Require-Bundle: org.eclipse.core.resources;bundle-version="3.13.800",
+ org.eclipse.pde.core;bundle-version="3.14.0",
+ org.eclipse.emf.ecore;bundle-version="2.23.0";visibility:=reexport,
+ org.eclipse.emf.ecore.xmi;bundle-version="2.16.0";visibility:=reexport,
+ org.eclipse.emf.codegen.ecore;bundle-version="2.23.0";visibility:=reexport,
+ org.junit;bundle-version="4.13.0",
+ org.opentest4j;bundle-version="1.2.0",
+ org.junit.jupiter.api;bundle-version="5.6.0",
+ edu.uoc.som.temf.testmodel;bundle-version="0.2.0",
+ edu.uoc.som.temf.generator;bundle-version="0.2.0"
