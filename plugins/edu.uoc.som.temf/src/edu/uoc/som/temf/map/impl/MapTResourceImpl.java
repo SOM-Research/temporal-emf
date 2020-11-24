@@ -69,7 +69,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 	protected MVStore mvStore;
 
 	protected boolean isPersistent = false;
-	
+
 	protected Clock clock = new NonRepeatingClock(ZoneOffset.UTC);
 
 	public MapTResourceImpl(URI uri) {
@@ -100,7 +100,12 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 
 	@Override
 	public void save(Map<?, ?> options) throws IOException {
-		if (!isLoaded() || !this.isPersistent) {
+		if (!isLoaded()) {
+			// If a resource is unloaded it's because no contents have been set (or no file
+			// has been read from disk), thus, a save in an unloaded Resource does not make 
+			// sense since it's empty. We do nothing in order to be compliant with the EMF API.
+			return;
+		} else if (!this.isPersistent) {
 			if (!getFile().getParentFile().exists()) {
 				getFile().getParentFile().mkdirs();
 			}
@@ -212,68 +217,81 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 	public Clock getClock() {
 		return clock;
 	}
-	
 
-    static final class NonRepeatingClock extends Clock implements Serializable {
-		// Dirty hack:
-		// Instant's precision is in the order of nanoseconds, however, 
-		// it's accuracy is usually lower (even in the order of a few 
-		// hundreds of nanoseconds). That means that multiple instants 
-		// created in a row may be virtually the same instant. To avoid 
-		// duplicate keys in the map (and thus missing values in the history),
-    	// we increment the instant in 1 nanosecond if the value is previous
-    	// or the same than the last call to get an instant.
-		// Hopefully, the number of subsequent calls to get Instants will 
-		// be low enough to avoid a big error accumulation 
-        private static final long serialVersionUID = 1L;
-        private final Clock clock;
-        private Instant lastInstant = Instant.MIN;
+	/**
+	 * Instant creation is key for identifying the moment when a
+	 * {@link EStructuralFeature} is set.
+	 * 
+	 * However, although {@link Instant}'s precision is in the order of nanoseconds,
+	 * it's accuracy is usually lower (even in the order of a few hundreds of
+	 * nanoseconds). That means that multiple instants created in a row may be
+	 * virtually the same {@link Instant}. To avoid duplicate keys in the map (and
+	 * thus missing values in the history), we increment the instant in 1 nanosecond
+	 * if the value is previous or the same than the last call to get an
+	 * {@link Instant}. 1 ns is the period of a frequency of 1GHz, so hopefully, the
+	 * number of subsequent calls to get {@link Instant}s will be low enough to
+	 * avoid a big error accumulation in nowadays processors.
+	 * 
+	 * @author agomez
+	 *
+	 */
+	static final class NonRepeatingClock extends Clock implements Serializable {
+		private static final long serialVersionUID = 1L;
+		private final Clock clock;
+		private Instant lastInstant = Instant.MIN;
 
-        NonRepeatingClock(ZoneId zone) {
-            this.clock = Clock.system(zone); 
-        }
-        @Override
-        public ZoneId getZone() {
-            return clock.getZone();
-        }
-        @Override
-        public Clock withZone(ZoneId zone) {
-            if (zone.equals(getZone())) {
-                return this;
-            }
-            return new NonRepeatingClock(zone);
-        }
-        @Override
-        public long millis() {
-            return clock.millis();
-        }
-        @Override
-        public Instant instant() {
-        	synchronized (lastInstant) {
-        		Instant readInstant = clock.instant();
-        		while (readInstant.isBefore(lastInstant) || readInstant.equals(lastInstant)) {
-        			readInstant = readInstant.plusNanos(1);
-        		}
-        		lastInstant = readInstant;
+		NonRepeatingClock(ZoneId zone) {
+			this.clock = Clock.system(zone);
+		}
+
+		@Override
+		public ZoneId getZone() {
+			return clock.getZone();
+		}
+
+		@Override
+		public Clock withZone(ZoneId zone) {
+			if (zone.equals(getZone())) {
+				return this;
 			}
-        	return lastInstant;
-        }
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof NonRepeatingClock) {
-                return clock.equals(((NonRepeatingClock) obj).clock);
-            }
-            return false;
-        }
-        @Override
-        public int hashCode() {
-            return clock.hashCode() + 1;
-        }
-        @Override
-        public String toString() {
-            return "NonRepeatingClock[" + clock.getZone() + "]";
-        }
-    }
+			return new NonRepeatingClock(zone);
+		}
+
+		@Override
+		public long millis() {
+			return clock.millis();
+		}
+
+		@Override
+		public Instant instant() {
+			synchronized (lastInstant) {
+				Instant readInstant = clock.instant();
+				while (readInstant.isBefore(lastInstant) || readInstant.equals(lastInstant)) {
+					readInstant = readInstant.plusNanos(1);
+				}
+				lastInstant = readInstant;
+			}
+			return lastInstant;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof NonRepeatingClock) {
+				return clock.equals(((NonRepeatingClock) obj).clock);
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return clock.hashCode() + 1;
+		}
+
+		@Override
+		public String toString() {
+			return "NonRepeatingClock[" + clock.getZone() + "]";
+		}
+	}
 
 	/**
 	 * Fake {@link EStructuralFeature} that represents the
@@ -284,14 +302,15 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 	 */
 	protected static class ResourceContentsEStructuralFeature extends EReferenceImpl {
 		protected static final String RESOURCE__CONTENTS__FEATURE_NAME = "eContents";
-	
+
 		public ResourceContentsEStructuralFeature() {
+			// @formatter:off
 			this.setUpperBound(ETypedElement.UNBOUNDED_MULTIPLICITY);
 			this.setLowerBound(0);
 			this.setName(RESOURCE__CONTENTS__FEATURE_NAME);
-			this.setEType(new EClassifierImpl() {
-			});
+			this.setEType(new EClassifierImpl() {});
 			this.setFeatureID(RESOURCE__CONTENTS);
+			// @formatter:on
 		}
 	}
 
@@ -304,7 +323,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 	 */
 	protected final class DummyRootEObject extends TObjectImpl {
 		protected static final String ROOT_EOBJECT_ID = "ROOT";
-	
+
 		public DummyRootEObject(Resource.Internal resource) {
 			super();
 			this.id = ROOT_EOBJECT_ID;
@@ -321,11 +340,11 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 	 */
 	protected class ResourceContentsEStoreEList extends EStoreEObjectImpl.EStoreEList<EObject> {
 		protected static final long serialVersionUID = 1L;
-	
+
 		protected ResourceContentsEStoreEList(InternalEObject owner, EStructuralFeature eStructuralFeature, EStore store) {
 			super(owner, eStructuralFeature, store);
 		}
-	
+
 		@Override
 		protected EObject validate(int index, EObject object) {
 			if (!canContainNull() && object == null) {
@@ -333,37 +352,37 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			}
 			return object;
 		}
-	
+
 		@Override
 		public Object getNotifier() {
 			return MapTResourceImpl.this;
 		}
-	
+
 		@Override
 		public int getFeatureID() {
 			return RESOURCE__CONTENTS;
 		}
-	
+
 		@Override
 		protected boolean isNotificationRequired() {
 			return MapTResourceImpl.this.eNotificationRequired();
 		}
-	
+
 		@Override
 		protected boolean useEquals() {
 			return false;
 		}
-	
+
 		@Override
 		protected boolean hasInverse() {
 			return true;
 		}
-	
+
 		@Override
 		protected boolean isUnique() {
 			return true;
 		}
-	
+
 		@Override
 		public NotificationChain inverseAdd(EObject object, NotificationChain notifications) {
 			InternalEObject eObject = (InternalEObject) object;
@@ -371,7 +390,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			MapTResourceImpl.this.attached(eObject);
 			return notifications;
 		}
-	
+
 		@Override
 		public NotificationChain inverseRemove(EObject object, NotificationChain notifications) {
 			InternalEObject eObject = (InternalEObject) object;
@@ -380,10 +399,10 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			}
 			return eObject.eSetResource(null, notifications);
 		}
-	
+
 		@Override
 		protected void delegateAdd(int index, EObject object) {
-			// FIXME? Maintain a list of hard links to the elements while moving
+			// Maintain a list of hard links to the elements while moving
 			// them to the new resource. If a garbage collection happens while
 			// traversing the children elements, some unsaved objects that are
 			// referenced from a saved object may be garbage collected before
@@ -393,32 +412,23 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			// Collect all contents
 			hardLinksList.add(object);
 			eObject.eAllContents().forEachRemaining(e -> hardLinksList.add(e));
-			// Iterate using the hard links list instead the getAllContents
-			// We ensure that using the hardLinksList it is not taken out by JIT
-			// compiler
+			// Iterate using the hard links list instead eAllContents
 			hardLinksList.forEach(e -> TObjectAdapterFactoryImpl.getAdapter(e, InternalTObject.class).tSetResource(MapTResourceImpl.this));
 			super.delegateAdd(index, object);
 		}
-	
+
 		@Override
 		protected EObject delegateRemove(int index) {
+			// See comment on #delegateAdd about hardLinkList
 			EObject object = super.delegateRemove(index);
 			List<EObject> hardLinksList = new ArrayList<>();
 			InternalTObject eObject = TObjectAdapterFactoryImpl.getAdapter(object, InternalTObject.class);
-			// Collect all contents
 			hardLinksList.add(object);
-			for (Iterator<EObject> it = eObject.eAllContents(); it.hasNext(); hardLinksList.add(it.next()))
-				;
-			// Iterate using the hard links list instead the getAllContents
-			// We ensure that using the hardLinksList it is not taken out by JIT
-			// compiler
-			for (EObject element : hardLinksList) {
-				InternalTObject internalElement = TObjectAdapterFactoryImpl.getAdapter(element, InternalTObject.class);
-				internalElement.tSetResource(null);
-			}
+			eObject.eAllContents().forEachRemaining(e -> hardLinksList.add(e));
+			hardLinksList.forEach(e -> TObjectAdapterFactoryImpl.getAdapter(e, InternalTObject.class).tSetResource(null));
 			return object;
 		}
-	
+
 		@Override
 		protected void didAdd(int index, EObject object) {
 			super.didAdd(index, object);
@@ -427,19 +437,19 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			}
 			modified();
 		}
-	
+
 		@Override
 		protected void didRemove(int index, EObject object) {
 			super.didRemove(index, object);
 			modified();
 		}
-	
+
 		@Override
 		protected void didSet(int index, EObject newObject, EObject oldObject) {
 			super.didSet(index, newObject, oldObject);
 			modified();
 		}
-	
+
 		@Override
 		protected void didClear(int oldSize, Object[] oldData) {
 			if (oldSize == 0) {
@@ -448,7 +458,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 				super.didClear(oldSize, oldData);
 			}
 		}
-	
+
 		protected void loaded() {
 			if (!MapTResourceImpl.this.isLoaded()) {
 				Notification notification = MapTResourceImpl.this.setLoaded(true);
@@ -457,7 +467,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 				}
 			}
 		}
-	
+
 		protected void modified() {
 			if (isTrackingModification()) {
 				setModified(true);
