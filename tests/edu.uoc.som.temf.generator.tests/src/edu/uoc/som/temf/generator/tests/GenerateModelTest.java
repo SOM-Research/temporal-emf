@@ -41,7 +41,7 @@ class GenerateModelTest {
 		GenModel genModel = createGenModel();
 
 		// @formatter:off
-		assertAll(
+		assertAll("Check TEMF-related properties of the genmodel file",
 				() -> assertEquals(GenJDKLevel.JDK80_LITERAL, genModel.getComplianceLevel()),
 				() -> assertEquals(GenDelegationKind.REFLECTIVE_LITERAL, genModel.getFeatureDelegation()),
 				() -> assertEquals(TObjectImpl.class.getName(), genModel.getRootExtendsClass()),
@@ -72,7 +72,7 @@ class GenerateModelTest {
 		IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(TEST_MODEL_PLUGIN_ID);
 
 		// @formatter:off
-		assertAll(
+		assertAll("Check all files have been generated",
 				() -> assertTrue(project.findMember("/.classpath").exists()),
 				() -> assertTrue(project.findMember("/.project").exists()),
 				() -> assertTrue(project.findMember("/build.properties").exists()),

@@ -1,12 +1,12 @@
 package edu.uoc.som.temf.tests;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.time.Instant;
 
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
@@ -18,56 +18,51 @@ class TestMVStore {
 
 		private static final long serialVersionUID = 1L;
 
-		Instant instant;
 		String id;
 		String feature;
 
-		private MyKey(Instant instant, String id, String feature) {
-			this.instant = instant;
+		private MyKey(String id, String feature) {
 			this.id = id;
 			this.feature = feature;
 		}
 
-		public static MyKey from(Instant instant, String id, String feature) {
-			return new MyKey(instant, id, feature);
+		public static MyKey from(String id, String feature) {
+			return new MyKey(id, feature);
 		}
 	}
 
 	@Test
 	void testCreateMVStore() throws IOException {
 		File file = TestUtils.createNonExistingTempFile();
-		MVStore store = MVStore.open(file.getAbsolutePath());
-		MVMap<MyKey, String> map = store.openMap("MAP");
-		
-		Instant now = Instant.now();
-		map.put(MyKey.from(now, "id0", "feature0"), "value 0");
-		map.put(MyKey.from(now, "id1", "feature0"), "value 1");
-		
-		store.commit();
-		store.close();
-		
-		assertTrue(file.exists());
+		createMVStore(file.getAbsolutePath());
+
+		assertTrue(file.exists(), "Check MVStore exists on disk");
 	}
 
 	@Test
 	void testReadMVStore() throws IOException {
 		File file = TestUtils.createNonExistingTempFile();
+		createMVStore(file.getAbsolutePath());
+
 		MVStore store = MVStore.open(file.getAbsolutePath());
 		MVMap<MyKey, String> map = store.openMap("MAP");
-		
-		Instant now = Instant.now();
-		map.put(MyKey.from(now, "id0", "feature0"), "value 0");
-		map.put(MyKey.from(now, "id1", "feature0"), "value 1");
-		
-		store.commit();
-		store.close();
 
-		store = MVStore.open(file.getAbsolutePath());
-		map = store.openMap("MAP");
-		assertEquals("value 0", map.get(MyKey.from(now, "id0", "feature0")));
-		assertEquals("value 1", map.get(MyKey.from(now, "id1", "feature0")));
-		
+		// @formatter:off
+		assertAll("Check MVStore contents are correct",
+				() -> assertEquals("value 0", map.get(MyKey.from("id0", "feature0"))),
+				() -> assertEquals("value 1", map.get(MyKey.from("id1", "feature0")))
+		);
+		// @formatter:on
+
 		store.close();
 	}
 
+	private static void createMVStore(String path) {
+		MVStore store = MVStore.open(path);
+		MVMap<MyKey, String> map = store.openMap("MAP");
+		map.put(MyKey.from("id0", "feature0"), "value 0");
+		map.put(MyKey.from("id1", "feature0"), "value 1");
+		store.commit();
+		store.close();
+	}
 }

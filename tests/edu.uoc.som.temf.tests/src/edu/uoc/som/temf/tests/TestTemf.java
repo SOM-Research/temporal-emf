@@ -1,5 +1,6 @@
 package edu.uoc.som.temf.tests;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,12 +16,9 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.EcoreFactory;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceImpl;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
@@ -50,209 +48,125 @@ class TestTemf {
 	 */
 	@Test
 	@Order(0)
-	void testCreateTResource() {
+	void testTResourceFactory() {
 		ResourceSet resourceSet = new ResourceSetImpl();
 		Resource resource = resourceSet.createResource(TURI.createTMapURI(new File(UUID.randomUUID().toString())));
 
-		assertTrue(resource instanceof TResource);
+		assertTrue(resource instanceof TResource, "Check that the TResourceFactory is correctly registered");
 	}
 
-	/**
-	 * Test that creating and populating a {@link TResource} without saving it does
-	 * not produce a file
-	 * 
-	 * @throws Exception
-	 */
 	@Test
-	void testCreateTResourceWithoutSaving() throws Exception {
+	void testCreateTResource() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
-
-		assertFalse(resourceFile.exists());
-
 		TResource resource = createTResource(resourceFile);
 
-		assertFalse(resource.isLoaded());
-
-		List<PopulationInfo> populationInfo = populateResource(resource);
-
-		assertTrue(resource.isLoaded());
-		assertFalse(resourceFile.exists());
-		assertEquals(1, resource.getContents().size());
-		assertEquals(last(populationInfo).count, countResourceContents(resource));
-
-		resource.unload();
-
-		assertEquals(0, countResourceContents(resource));
-		assertFalse(resource.isLoaded());
+		assertFalse(resource.isLoaded(), "Check a newly created TResource is unloaded");
+		assertFalse(resourceFile.exists(), "Check a newly created unsaved TResource does not produce a file");
 	}
 
-	/**
-	 * Test that loading an empty {@link Resource} does not produce a file
-	 * 
-	 * @throws Exception
-	 */
-	@Test
-	void testLoadEmptyTResource() throws Exception {
-		File resourceFile = TestUtils.createNonExistingTempFile();
-
-		assertFalse(resourceFile.exists());
-
-		TResource resource = createTResource(resourceFile);
-
-		assertFalse(resource.isLoaded());
-
-		resource.getContents().clear();
-
-		assertTrue(resource.isLoaded());
-		assertFalse(resourceFile.exists());
-
-		assertEquals(0, countResourceContents(resource));
-
-		resource.unload();
-
-		assertEquals(0, countResourceContents(resource));
-		assertFalse(resource.isLoaded());
-		assertFalse(resourceFile.exists());
-	}
-
-	/**
-	 * Test that saving an unloaded resource does not produce a file
-	 * 
-	 * @throws Exception
-	 */
 	@Test
 	void testSaveUnloadedTResource() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
-
-		assertFalse(resourceFile.exists());
-
 		TResource resource = createTResource(resourceFile);
-
-		assertFalse(resource.isLoaded());
-		assertFalse(resourceFile.exists());
-
 		resource.save(Collections.emptyMap());
 
-		assertFalse(resource.isLoaded());
-		assertFalse(resourceFile.exists());
-		assertEquals(0, countResourceContents(resource));
+		assertFalse(resource.isLoaded(), "Check that saving an unloaded TResource does not mark it as loaded");
+		assertFalse(resourceFile.exists(), "Check that saving an unloaded TResource does not produce a file");
+		assertEquals(0, countResourceContents(resource), "Check that TResource is empty");
 
-		resource.unload();
-
-		assertEquals(0, countResourceContents(resource));
-		assertFalse(resource.isLoaded());
-		assertFalse(resourceFile.exists());
 	}
-
-	/**
-	 * Test that saving an empty but loaded resource produces a file
-	 * 
-	 * @throws Exception
-	 */
+	
 	@Test
-	void testSaveEmptyLoadedTResource() throws Exception {
+	void testLoadEmptyTResource() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
-
-		assertFalse(resourceFile.exists());
-
 		TResource resource = createTResource(resourceFile);
-
-		assertFalse(resource.isLoaded());
-
 		resource.getContents().clear();
 
-		assertTrue(resource.isLoaded());
-		assertFalse(resourceFile.exists());
-
-		resource.save(Collections.emptyMap());
-
-		assertTrue(resource.isLoaded());
-		assertTrue(resourceFile.exists());
-		assertArrayEquals(new String[] { "mvstore" }, resourceFile.list());
-		assertEquals(0, countResourceContents(resource));
-
-		resource.unload();
-
-		assertEquals(0, countResourceContents(resource));
-		assertFalse(resource.isLoaded());
-		assertTrue(resourceFile.exists());
-		assertArrayEquals(new String[] { "mvstore" }, resourceFile.list());
+		assertTrue(resource.isLoaded(), "Check a newly created TResource is loaded when its contents are cleared");
+		assertFalse(resourceFile.exists(), "Check a newly created unsaved TResource does not produce a file when contents are cleared");
+		assertEquals(0, countResourceContents(resource), "Check that TResource is empty");
 	}
 
-	/**
-	 * Test to create a {@link TResource} populating it before saving it to disk
-	 * (this will create an in-memery, off-heap {@link TResource})
-	 * 
-	 * @throws Exception
-	 */
+	@Test
+	void testSaveLoadedEmptyTResource() throws Exception {
+		File resourceFile = TestUtils.createNonExistingTempFile();
+		TResource resource = createTResource(resourceFile);
+		resource.getContents().clear();
+		resource.save(Collections.emptyMap());
+
+		assertEquals(0, countResourceContents(resource), "Check that TResource is still empty after saving");
+		assertTrue(resource.isLoaded(), "Check saved TResource is still loaded after saving");
+		assertTrue(resourceFile.isDirectory(), "Check TResource has produced a directory on disk");
+		assertArrayEquals(new String[] { "mvstore" }, resourceFile.list(), "Check TResource has produced a mvstore file on disk");
+	}
+
+	@Test
+	void testCreateAndPopulateUnsavedTResource() throws Exception {
+		File resourceFile = TestUtils.createNonExistingTempFile();
+		TResource resource = createTResource(resourceFile);
+		List<PopulationInfo> populationInfo = populateResource(resource);
+
+		assertTrue(resource.isLoaded(), "Check a newly created TResource is loaded when contents are added");
+		assertFalse(resourceFile.exists(), "Check a newly created unsaved TResource does not produce a file when contents are added");
+		assertEquals(last(populationInfo).count, countResourceContents(resource), "Check TResource contents are correct");
+	}
+
+	@Test
+	void testUnloadPopulatedUnsavedTResource() throws Exception {
+		File resourceFile = TestUtils.createNonExistingTempFile();
+		TResource resource = createTResource(resourceFile);
+		populateResource(resource);
+		resource.unload();
+
+		assertFalse(resource.isLoaded(), "Check the TResource is unloaded");
+		assertFalse(resourceFile.exists(), "Check the unsaved TResource does not produce a file when unloaded");
+		assertEquals(0, countResourceContents(resource), "Check TResource is empty");
+	}
+
+
 	@Test
 	void testCreateTResourceSavingBeforePopulating() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
-
-		assertFalse(resourceFile.exists());
-
 		TResource resource = createTResource(resourceFile);
-
-		assertFalse(resource.isLoaded());
-
+		resource.getContents().clear();
 		resource.save(Collections.emptyMap());
-
-		assertFalse(resource.isLoaded());
-		assertFalse(resourceFile.exists());
-
 		List<PopulationInfo> populationInfo = populateResource(resource);
 
-		assertEquals(last(populationInfo).count, countResourceContents(resource));
+		assertTrue(resource.isLoaded(), "Check the TResource is loaded");
+		assertTrue(resourceFile.exists(), "Check the TResource exists");
+		assertEquals(last(populationInfo).count, countResourceContents(resource), "Check TResource contents are correct when populating it after saving to disk");
 
 		resource.unload();
-
-		assertEquals(0, countResourceContents(resource));
-		assertFalse(resource.isLoaded());
 	}
 
-	/**
-	 * Test to create a {@link TResource} populating it after saving it to disk
-	 * (this will create an on-disk {@link TResource})
-	 * 
-	 * @throws Exception
-	 */
 	@Test
 	void testCreateTResourceSavingAfterPopulating() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
-
-		assertFalse(resourceFile.exists());
-
 		TResource resource = createTResource(resourceFile);
-
-		assertFalse(resource.isLoaded());
-
 		List<PopulationInfo> populationInfo = populateResource(resource);
-
-		assertEquals(last(populationInfo).count, countResourceContents(resource));
-
-		assertTrue(resource.isLoaded());
-		assertFalse(resourceFile.exists());
-
 		resource.save(Collections.emptyMap());
-
-		assertTrue(resource.isLoaded());
-		assertTrue(resourceFile.exists());
-		assertArrayEquals(new String[] { "mvstore" }, resourceFile.list());
-
-		assertEquals(last(populationInfo).count, countResourceContents(resource));
-
+		
+		assertTrue(resource.isLoaded(), "Check the TResource is loaded");
+		assertTrue(resourceFile.exists(), "Check the TResource exists");
+		assertEquals(last(populationInfo).count, countResourceContents(resource), "Check TResource contents are correct when populating it after saving to disk");
+		
 		resource.unload();
-
-		assertEquals(0, countResourceContents(resource));
-		assertFalse(resource.isLoaded());
-		assertTrue(resourceFile.exists());
-		assertArrayEquals(new String[] { "mvstore" }, resourceFile.list());
 	}
 
-	/**
-	 * Test to read a saved {@link TResource} after creating and saving it
-	 * @throws Exception
-	 */
+	@Test
+	void testUnloadPopulatedSavedTResource() throws Exception {
+		File resourceFile = TestUtils.createNonExistingTempFile();
+		TResource resource = createTResource(resourceFile);
+		populateResource(resource);
+		resource.save(Collections.emptyMap());
+		resource.unload();
+
+		assertFalse(resource.isLoaded(), "Check the TResource is usloaded");
+		assertTrue(resourceFile.exists(), "Check the TResource exists");
+		assertEquals(0, countResourceContents(resource), "Check TResource is empty");
+	}
+
+
 	@Test
 	void testReadTResource() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
@@ -261,53 +175,36 @@ class TestTemf {
 		resource.save(Collections.emptyMap());
 		resource.unload();
 
-		resource = getTResource(resourceFile);
-		
-		assertEquals(populationInfo.get(0).lastElt, ((Node) resource.getContents().get(0)).getName());
-		assertEquals(last(populationInfo).count, countResourceContents(resource));
-		
-		resource.unload();
-		
-		assertEquals(0, countResourceContents(resource));
+		TResource newResource = getTResource(resourceFile);
+
+		// @formatter:off
+		assertAll("Check TResource contents",
+				() -> assertEquals(populationInfo.get(0).lastElt, ((Node) newResource.getContents().get(0)).getName(), "Check name of last created element"),
+				() -> assertEquals(last(populationInfo).count, countResourceContents(newResource), "Check number of elements in TResource")
+		);
+		// @formatter:on
+
+		newResource.unload();
 	}
 
-	/**
-	 * This test is kept as a reference on what a standard EMF {@link Resource} must
-	 * behave
-	 * 
-	 * @throws Exception
-	 */
 	@Test
-	void testCreateXmiResourceSavingBeforePopulating() throws Exception {
+	void testUnloadPreexistingTResource() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
-
-		assertFalse(resourceFile.exists());
-
-		Resource resource = new XMIResourceImpl(URI.createFileURI(resourceFile.getAbsolutePath()));
-
-		assertFalse(resource.isLoaded());
-
+		TResource resource = createTResource(resourceFile);
+		populateResource(resource);
 		resource.save(Collections.emptyMap());
-
-		assertFalse(resource.isLoaded());
-		assertTrue(resourceFile.exists());
-
-		resource.getContents().add(EcoreFactory.eINSTANCE.createEObject());
-
-		assertEquals(1, countResourceContents(resource));
-
 		resource.unload();
 
-		assertEquals(0, countResourceContents(resource));
-		assertFalse(resource.isLoaded());
+		TResource newResource = getTResource(resourceFile);
+		newResource.unload();
+
+		assertFalse(newResource.isLoaded(), "Check the newly loaded TResource is now unloaded");
+		assertTrue(resourceFile.exists(), "Check the TResource still exists");
+		assertEquals(0, countResourceContents(newResource), "Check newly loaded TResource is now empty");
+
+
 	}
 
-//		// Load model using a different ResourceSet
-//		resource = getTResource(resourceFile);
-//		assertEquals(1, resource.getContents().size());
-//		assertTrue(resource.getContents().get(0) instanceof Node);
-//		assertEquals("ROOT", ((Node) resource.getContents().get(0)).getName());
-//		resource.unload();
 	private static int countResourceContents(Resource resource) {
 		AtomicInteger count = new AtomicInteger();
 		resource.getAllContents().forEachRemaining((e) -> count.getAndIncrement());
