@@ -7,7 +7,8 @@ Bundle-ClassPath: .
 Automatic-Module-Name: edu.uoc.som.temf.generator.tests
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Bundle-Vendor: SOM Research Lab
-Require-Bundle: org.eclipse.core.resources;bundle-version="3.13.800",
+Require-Bundle: org.eclipse.core.runtime;bundle-version="3.19.0",
+ org.eclipse.core.resources;bundle-version="3.13.800",
  org.eclipse.pde.core;bundle-version="3.14.0",
  org.eclipse.emf.ecore;bundle-version="2.23.0";visibility:=reexport,
  org.eclipse.emf.ecore.xmi;bundle-version="2.16.0";visibility:=reexport,
