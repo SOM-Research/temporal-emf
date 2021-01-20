@@ -164,6 +164,6 @@ public class TObjectAtImpl implements TObject {
 
 	@Override
 	public Object eInvoke(EOperation operation, EList<?> arguments) throws InvocationTargetException {
-		throw new UnsupportedOperationException("Past TObjects cannot be modified");
+		throw new UnsupportedOperationException("Past TObjects cannot invoke methods");
 	}
 }
