@@ -141,18 +141,18 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public EList<EObject> getContents(Instant instant) {
+	public EList<EObject> getContentsAt(Instant instant) {
 		return ECollections.unmodifiableEList(
 				(EList<EObject>) (Object) ECollections.asEList(tStore.toArrayAt(instant, DUMMY_ROOT_EOBJECT, ROOT_CONTENTS_ESTRUCTURALFEATURE)));
 	}
 
-	public TreeIterator<EObject> getAllContents(final Instant instant) {
+	public TreeIterator<EObject> getAllContentsAt(final Instant instant) {
 		return new AbstractTreeIterator<EObject>(this, false) {
 			private static final long serialVersionUID = 1L;
 
 			@Override
 			public Iterator<EObject> getChildren(Object object) {
-				return object == MapTResourceImpl.this ? MapTResourceImpl.this.getContents(instant).iterator()
+				return object == MapTResourceImpl.this ? MapTResourceImpl.this.getContentsAt(instant).iterator()
 						: ((TObject) object).eContentsAt(instant).iterator();
 			}
 		};
