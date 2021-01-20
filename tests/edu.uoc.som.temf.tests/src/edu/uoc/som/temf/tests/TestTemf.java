@@ -13,15 +13,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.Stack;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
+import edu.uoc.som.temf.Logger;
 import edu.uoc.som.temf.TURI;
 import edu.uoc.som.temf.core.TResource;
 import edu.uoc.som.temf.estores.TStore;
@@ -32,13 +36,11 @@ class TestTemf {
 
 	static class PopulationInfo {
 		Instant instant;
-		int count;
-		String lastElt;
+		String eltName;
 
-		private PopulationInfo(Instant instant, int count, String lastElt) {
+		private PopulationInfo(Instant instant, String lastElt) {
 			this.instant = instant;
-			this.count = count;
-			this.lastElt = lastElt;
+			this.eltName = lastElt;
 		}
 	}
 
@@ -75,7 +77,7 @@ class TestTemf {
 		assertEquals(0, countResourceContents(resource), "Check that TResource is empty");
 
 	}
-	
+
 	@Test
 	void testLoadEmptyTResource() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
@@ -104,18 +106,18 @@ class TestTemf {
 	void testCreateAndPopulateUnsavedTResource() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
 		TResource resource = createTResource(resourceFile);
-		List<PopulationInfo> populationInfo = populateResource(resource);
+		List<PopulationInfo> populationInfo = populateResourceDepthFirst(resource);
 
 		assertTrue(resource.isLoaded(), "Check a newly created TResource is loaded when contents are added");
 		assertFalse(resourceFile.exists(), "Check a newly created unsaved TResource does not produce a file when contents are added");
-		assertEquals(last(populationInfo).count, countResourceContents(resource), "Check TResource contents are correct");
+		assertEquals(populationInfo.size(), countResourceContents(resource), "Check TResource contents are correct");
 	}
 
 	@Test
 	void testUnloadPopulatedUnsavedTResource() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
 		TResource resource = createTResource(resourceFile);
-		populateResource(resource);
+		populateResourceDepthFirst(resource);
 		resource.unload();
 
 		assertFalse(resource.isLoaded(), "Check the TResource is unloaded");
@@ -123,18 +125,17 @@ class TestTemf {
 		assertEquals(0, countResourceContents(resource), "Check TResource is empty");
 	}
 
-
 	@Test
 	void testCreateTResourceSavingBeforePopulating() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
 		TResource resource = createTResource(resourceFile);
 		resource.getContents().clear();
 		resource.save(Collections.emptyMap());
-		List<PopulationInfo> populationInfo = populateResource(resource);
+		List<PopulationInfo> populationInfo = populateResourceDepthFirst(resource);
 
 		assertTrue(resource.isLoaded(), "Check the TResource is loaded");
 		assertTrue(resourceFile.exists(), "Check the TResource exists");
-		assertEquals(last(populationInfo).count, countResourceContents(resource), "Check TResource contents are correct when populating it after saving to disk");
+		assertEquals(populationInfo.size(), countResourceContents(resource), "Check TResource contents are correct when populating it after saving to disk");
 
 		resource.unload();
 	}
@@ -143,13 +144,13 @@ class TestTemf {
 	void testCreateTResourceSavingAfterPopulating() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
 		TResource resource = createTResource(resourceFile);
-		List<PopulationInfo> populationInfo = populateResource(resource);
+		List<PopulationInfo> populationInfo = populateResourceDepthFirst(resource);
 		resource.save(Collections.emptyMap());
-		
+
 		assertTrue(resource.isLoaded(), "Check the TResource is loaded");
 		assertTrue(resourceFile.exists(), "Check the TResource exists");
-		assertEquals(last(populationInfo).count, countResourceContents(resource), "Check TResource contents are correct when populating it after saving to disk");
-		
+		assertEquals(populationInfo.size(), countResourceContents(resource), "Check TResource contents are correct when populating it after saving to disk");
+
 		resource.unload();
 	}
 
@@ -157,7 +158,7 @@ class TestTemf {
 	void testUnloadPopulatedSavedTResource() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
 		TResource resource = createTResource(resourceFile);
-		populateResource(resource);
+		populateResourceDepthFirst(resource);
 		resource.save(Collections.emptyMap());
 		resource.unload();
 
@@ -166,12 +167,11 @@ class TestTemf {
 		assertEquals(0, countResourceContents(resource), "Check TResource is empty");
 	}
 
-
 	@Test
 	void testReadTResource() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
 		TResource resource = createTResource(resourceFile);
-		List<PopulationInfo> populationInfo = populateResource(resource);
+		List<PopulationInfo> populationInfo = populateResourceDepthFirst(resource);
 		resource.save(Collections.emptyMap());
 		resource.unload();
 
@@ -179,8 +179,8 @@ class TestTemf {
 
 		// @formatter:off
 		assertAll("Check TResource contents",
-				() -> assertEquals(populationInfo.get(0).lastElt, ((Node) newResource.getContents().get(0)).getName(), "Check name of last created element"),
-				() -> assertEquals(last(populationInfo).count, countResourceContents(newResource), "Check number of elements in TResource")
+				() -> assertEquals(populationInfo.get(0).eltName, ((Node) newResource.getContents().get(0)).getName(), "Check name of last created element"),
+				() -> assertEquals(populationInfo.size(), countResourceContents(newResource), "Check number of elements in TResource")
 		);
 		// @formatter:on
 
@@ -191,7 +191,7 @@ class TestTemf {
 	void testUnloadPreexistingTResource() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
 		TResource resource = createTResource(resourceFile);
-		populateResource(resource);
+		populateResourceDepthFirst(resource);
 		resource.save(Collections.emptyMap());
 		resource.unload();
 
@@ -201,13 +201,84 @@ class TestTemf {
 		assertFalse(newResource.isLoaded(), "Check the newly loaded TResource is now unloaded");
 		assertTrue(resourceFile.exists(), "Check the TResource still exists");
 		assertEquals(0, countResourceContents(newResource), "Check newly loaded TResource is now empty");
-
-
 	}
 
+	@Test
+	void testCountTResource() throws Exception {
+		File resourceFile = TestUtils.createNonExistingTempFile();
+		TResource resource = createTResource(resourceFile);
+		resource.save(Collections.emptyMap());
+		List<PopulationInfo> populationInfo = populateResourceDepthFirst(resource);
+
+		assertEquals(populationInfo.size(), countResourceContents(resource), "Check TResource has all the created elements");
+	}
+
+	@Test
+	void testCountTResourceAt() throws Exception {
+		File resourceFile = TestUtils.createNonExistingTempFile();
+		TResource resource = createTResource(resourceFile);
+		resource.save(Collections.emptyMap());
+		List<PopulationInfo> populationInfo = populateResourceRandomly(resource);
+		Logger.log(Logger.SEVERITY_INFO, "TResource has " + populationInfo.size() + " elements");
+
+		for (int i = 1; i < populationInfo.size(); i++) {
+			if (populationInfo.get(i - 1).instant.isAfter(populationInfo.get(i).instant)) {
+				assertEquals(populationInfo.size(), countResourceContents(resource), "Check that PopulationInfo elements are ordered by creation date");
+			}
+		}
+
+		printResourceContents(resource);
+		
+		// Pick a position and an instant
+		int position = (int) (populationInfo.size() * 0.75);
+		Instant instant = populationInfo.get(position).instant;
+		Logger.log(Logger.SEVERITY_INFO, "TResource had " + (position + 1) + " elements at " + instant);
+
+		AtomicInteger count = new AtomicInteger();
+
+		// Count using getAllContentsAt
+		count.set(0);
+		resource.getAllContentsAt(instant).forEachRemaining((e) -> count.incrementAndGet());
+		assertEquals(position + 1, count.get(), "Check TResource has all the created elements using getAllContentsAt");
+
+		// Count (manually) using getContentsAt
+		count.set(0);
+		Stack<EObject> remaining = new Stack<>();
+		remaining.addAll(resource.getContentsAt(instant));
+		do {
+			EObject elt = remaining.pop();
+			count.incrementAndGet();
+			remaining.addAll(((Node) elt).getChildrenAt(instant));
+		} while (!remaining.empty());
+		assertEquals(position + 1, count.get(), "Check TResource has all the created elements using getContentsAt");
+	}
+
+	/**
+	 * Utility method to print the resource contents in a formatted way
+	 * 
+	 * @param resource
+	 */
+	@SuppressWarnings("unused")
+	private static void printResourceContents(Resource resource) {
+		resource.getContents().forEach(e -> printNodeContents((Node) e, 0));
+	}
+
+	private static void printNodeContents(Node node, int depth) {
+		IntStream.range(0, depth).forEach(i -> System.out.print("  "));
+		System.out.println("Node [" + node.getName() + "]");
+		node.getChildren().forEach(c -> printNodeContents(c, depth + 1));
+	}
+
+	/**
+	 * Count the resource contents recursively using
+	 * {@link Resource#getAllContents()}
+	 * 
+	 * @param resource
+	 * @return
+	 */
 	private static int countResourceContents(Resource resource) {
 		AtomicInteger count = new AtomicInteger();
-		resource.getAllContents().forEachRemaining((e) -> count.getAndIncrement());
+		resource.getAllContents().forEachRemaining((e) -> count.incrementAndGet());
 		return count.get();
 	}
 
@@ -230,66 +301,85 @@ class TestTemf {
 	private static TResource getTResource(File resourceFile) {
 		return (TResource) new ResourceSetImpl().getResource(TURI.createTMapURI(resourceFile), true);
 	}
-
+	
 	/**
-	 * Randomly populate a TResource returning when each element of the
-	 * {@link TResource} was added. The root {@link Node} element is added to the
-	 * {@link TResource} at the beginning, so that all the additions are done
-	 * directly in the {@link TStore} of the {@link TResource}
+	 * Randomly populate a TResource returning when
+	 * each element of the {@link TResource} was added. The root {@link Node}
+	 * element is added to the {@link TResource} at the beginning, so that all the
+	 * additions are done directly in the {@link TStore} of the {@link TResource}
 	 * 
 	 * @param resource
 	 * @return
 	 */
-	private static List<PopulationInfo> populateResource(TResource resource) {
+	private static List<PopulationInfo> populateResourceRandomly(TResource resource) {
+		List<PopulationInfo> populationInfo = new ArrayList<>();
+		Clock clock = resource.getClock();
+		
+		int count = 0;
+		
+		Node root = TestmodelFactory.eINSTANCE.createNode();
+		root.setName(String.valueOf(count++));
+		resource.getContents().add(root);
+		populationInfo.add(new PopulationInfo(clock.instant(), root.getName()));
+		List<Node> elements = new ArrayList<>();
+		Node selection = root;
+		Random random = new Random();
+		do {
+			Node child = TestmodelFactory.eINSTANCE.createNode();
+			child.setName(String.valueOf(count++));
+			selection.getChildren().add(child);
+			populationInfo.add(new PopulationInfo(clock.instant(), child.getName()));
+			elements.add(child);
+			selection = elements.get(random.nextInt(elements.size()));
+		} while (elements.size() < 50 || random.nextInt(50) != 0);
+		
+		return populationInfo;
+	}
+
+	/**
+	 * Randomly populate a TResource using a depth first algorithm returning when
+	 * each element of the {@link TResource} was added. The root {@link Node}
+	 * element is added to the {@link TResource} at the beginning, so that all the
+	 * additions are done directly in the {@link TStore} of the {@link TResource}
+	 * 
+	 * @param resource
+	 * @return
+	 */
+	private static List<PopulationInfo> populateResourceDepthFirst(TResource resource) {
+		List<PopulationInfo> populationInfo = new ArrayList<>();
+		Clock clock = resource.getClock();
 
 		Node root = TestmodelFactory.eINSTANCE.createNode();
-		List<PopulationInfo> result = populateNode(resource.getClock(), root);
+		root.setName("ROOT");
 		resource.getContents().add(root);
+		populationInfo.add(new PopulationInfo(clock.instant(), root.getName()));
+		do {
+			populateNodeDepthFirst(clock, root, populationInfo, 3);
+		} while (populationInfo.size() < 3);
 
-		return result;
+		return populationInfo;
 	}
 
 	/**
-	 * Randomly populate a {@link Node} up to 3 levels of depth saving info on how
-	 * when the children are being added
+	 * Randomly populate a {@link Node} up to <code>depth</code> levels of depth
+	 * saving info on how when the children are being added
 	 * 
 	 * @param resource
 	 * @return
 	 */
-	private static List<PopulationInfo> populateNode(Clock clock, Node root) {
-		List<PopulationInfo> result = new ArrayList<>();
+	private static void populateNodeDepthFirst(Clock clock, Node node, List<PopulationInfo> populationInfo, int depth) {
+		if (depth == 0) {
+			return;
+		}
+
 		Random random = new Random();
 
-		root.setName("ROOT");
-		result.add(new PopulationInfo(clock.instant(), 1, root.getName()));
-
 		for (int i = 0; i < random.nextInt(10); i++) {
-			Node nodeI = TestmodelFactory.eINSTANCE.createNode();
-			root.getChildren().add(nodeI);
-			nodeI.setName(UUID.randomUUID().toString());
-
-			result.add(new PopulationInfo(clock.instant(), last(result).count + 1, nodeI.getName()));
-
-			for (int j = 0; j < random.nextInt(10); j++) {
-				Node nodeJ = TestmodelFactory.eINSTANCE.createNode();
-				nodeI.getChildren().add(nodeJ);
-				nodeJ.setName(UUID.randomUUID().toString());
-
-				result.add(new PopulationInfo(clock.instant(), last(result).count + 1, nodeJ.getName()));
-
-				for (int k = 0; k < random.nextInt(10); k++) {
-					Node nodeK = TestmodelFactory.eINSTANCE.createNode();
-					nodeI.getChildren().add(nodeK);
-					nodeK.setName(UUID.randomUUID().toString());
-
-					result.add(new PopulationInfo(clock.instant(), last(result).count + 1, nodeJ.getName()));
-				}
-			}
+			Node child = TestmodelFactory.eINSTANCE.createNode();
+			child.setName(UUID.randomUUID().toString());
+			node.getChildren().add(child);
+			populationInfo.add(new PopulationInfo(clock.instant(), child.getName()));
+			populateNodeDepthFirst(clock, child, populationInfo, depth - 1);
 		}
-		return result;
-	}
-
-	private static <T> T last(List<T> list) {
-		return list.get(list.size() - 1);
 	}
 }
