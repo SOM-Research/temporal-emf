@@ -25,6 +25,7 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
+import edu.uoc.som.temf.Logger;
 import edu.uoc.som.temf.TURI;
 import edu.uoc.som.temf.core.TResource;
 import edu.uoc.som.temf.testmodel.Node;
@@ -254,38 +255,38 @@ class TestTemf {
 		assertEquals(position + 1, count.get(), "Check TResource has all the created elements using getContentsAt");
 	}
 	
-//	@Test
-//	void testTResourceAt() throws Exception {
-//		File resourceFile = TestUtils.createNonExistingTempFile();
-//		TResource resource = createTResource(resourceFile);
-//		resource.save(Collections.emptyMap());
-//		List<PopulationInfo> populationInfo = populateResourceRandomly(resource);
-//
-//		printResourceContents(resource);
-//		
-//		// Pick a position and an instant
-//		int position = (int) (populationInfo.size() * 0.75);
-//		Instant instant = populationInfo.get(position).instant;
-//		Logger.log(Logger.SEVERITY_INFO, "TResource had " + (position + 1) + " elements at " + instant);
-//
-//		AtomicInteger count = new AtomicInteger();
-//
-//		// Count using getAllContentsAt
-//		count.set(0);
-//		resource.at(instant).getAllContents().forEachRemaining((e) -> count.incrementAndGet());
-//		assertEquals(position + 1, count.get(), "Check TResource has all the created elements using getAllContentsAt");
-//
-//		// Count (manually) using getContentsAt
-//		count.set(0);
-//		Stack<EObject> remaining = new Stack<>();
-//		remaining.addAll(resource.at(instant).getContents());
-//		do {
-//			EObject elt = remaining.pop();
-//			count.incrementAndGet();
-//			remaining.addAll(((Node) elt).getChildren());
-//		} while (!remaining.empty());
-//		assertEquals(position + 1, count.get(), "Check TResource has all the created elements using getContentsAt");
-//	}
+	@Test
+	void testTResourceAt() throws Exception {
+		File resourceFile = TestUtils.createNonExistingTempFile();
+		TResource resource = createTResource(resourceFile);
+		resource.save(Collections.emptyMap());
+		List<PopulationInfo> populationInfo = populateResourceRandomly(resource);
+
+		printResourceContents(resource);
+		
+		// Pick a position and an instant
+		int position = (int) (populationInfo.size() * 0.75);
+		Instant instant = populationInfo.get(position).instant;
+		Logger.log(Logger.SEVERITY_INFO, "TResource had " + (position + 1) + " elements at " + instant);
+
+		AtomicInteger count = new AtomicInteger();
+
+		// Count using getAllContentsAt
+		count.set(0);
+		resource.at(instant).getAllContents().forEachRemaining((e) -> count.incrementAndGet());
+		assertEquals(position + 1, count.get(), "Check TResource has all the created elements using getAllContentsAt");
+
+		// Count (manually) using getContentsAt
+		count.set(0);
+		Stack<EObject> remaining = new Stack<>();
+		remaining.addAll(resource.at(instant).getContents());
+		do {
+			EObject elt = remaining.pop();
+			count.incrementAndGet();
+			remaining.addAll(((Node) elt).getChildren());
+		} while (!remaining.empty());
+		assertEquals(position + 1, count.get(), "Check TResource has all the created elements using getContentsAt");
+	}
 
 	
 	/**

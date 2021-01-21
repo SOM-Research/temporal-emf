@@ -51,7 +51,8 @@ import edu.uoc.som.temf.TURI;
 import edu.uoc.som.temf.core.InternalTObject;
 import edu.uoc.som.temf.core.TObject;
 import edu.uoc.som.temf.core.TResource;
-import edu.uoc.som.temf.map.impl.DirectWriteMapResourceTStoreImpl;
+import edu.uoc.som.temf.map.impl.MVStoreResourceTStoreImpl;
+import edu.uoc.som.temf.map.impl.ROMVStoreResourceTStoreImpl;
 import edu.uoc.som.temf.tstores.SearcheableResourceTStore;
 import edu.uoc.som.temf.tstores.TStore;
 import edu.uoc.som.temf.tstores.impl.IsSetCachingDelegatedTStoreImpl;
@@ -62,70 +63,21 @@ public class TResourceImpl extends ResourceImpl implements TResource {
 	protected static final ResourceContentsEStructuralFeature ROOT_CONTENTS_ESTRUCTURALFEATURE = new ResourceContentsEStructuralFeature();
 
 	protected final DummyRootEObject DUMMY_ROOT_EOBJECT = new DummyRootEObject(this);
-	
+
 	protected SearcheableResourceTStore tStore;
 
 	protected MVStore mvStore;
 
-	protected boolean isPersistent = false;
-
 	protected Clock clock = new NonRepeatingClock(ZoneOffset.UTC);
 
 	public TResourceImpl(URI uri) {
-		super(uri);
-		this.mvStore = new MVStore.Builder().fileStore(new OffHeapStore()).open();
-		this.tStore = new DirectWriteMapResourceTStoreImpl(this, mvStore);
-		this.isPersistent = false;
+		this(uri, new MVStore.Builder().fileStore(new OffHeapStore()).open());
 	}
 
-	@Override
-	public void load(Map<?, ?> options) throws IOException {
-		try {
-			isLoading = true;
-			if (isLoaded) {
-				return;
-			} else if (!getFile().exists()) {
-				throw new FileNotFoundException(uri.toFileString());
-			} else {
-				this.mvStore = MVStore.open(getFile().getAbsolutePath());
-				this.isPersistent = true;
-				this.tStore = createResourceEStore(this.mvStore);
-			}
-			isLoaded = true;
-		} finally {
-			isLoading = false;
-		}
-	}
-
-	@Override
-	public void save(Map<?, ?> options) throws IOException {
-		if (!isLoaded()) {
-			// If a resource is unloaded it's because no contents have been set (or no file
-			// has been read from disk), thus, a save in an unloaded Resource does not make 
-			// sense since it's empty. We do nothing in order to be compliant with the EMF API.
-			return;
-		} else if (!this.isPersistent) {
-			if (!getFile().getParentFile().exists()) {
-				getFile().getParentFile().mkdirs();
-			}
-			MVStore newMvStore = MVStore.open(getFile().getAbsolutePath());
-			if (!newMvStore.getMapNames().isEmpty()) {
-				Logger.log(Logger.SEVERITY_WARNING,
-						NLS.bind("Saving on existing store {0} without previously loading its contents. Contents will be lost.", getFile().toString()));
-				newMvStore.getMapNames().forEach(name -> newMvStore.openMap(name).clear());
-			}
-			mvStore.getMapNames().forEach(name -> newMvStore.openMap(name).putAll(mvStore.openMap(name)));
-			this.mvStore = newMvStore;
-			this.isPersistent = true;
-			this.tStore = createResourceEStore(this.mvStore);
-			this.isLoaded = true;
-		}
-
-		mvStore.commit();
-	}
-
-	protected File getFile() {
-		return FileUtils.getFile(TURI.createTURI(getURI().appendSegment("mvstore")).toFileString());
+	private TResourceImpl(URI uri, MVStore mvStore) {
+		this.uri = uri;
+		this.mvStore = mvStore;
+		this.tStore = new MVStoreResourceTStoreImpl(this, mvStore);
 	}
 
 	@Override
@@ -133,10 +85,11 @@ public class TResourceImpl extends ResourceImpl implements TResource {
 		return tStore;
 	}
 
-	public MVStore getMvStore() {
-		return mvStore;
+	@Override
+	public Clock getClock() {
+		return clock;
 	}
-	
+
 	@Override
 	public EList<EObject> getContents() {
 		return new ResourceContentsEStoreEList(DUMMY_ROOT_EOBJECT, ROOT_CONTENTS_ESTRUCTURALFEATURE, tStore);
@@ -155,8 +108,7 @@ public class TResourceImpl extends ResourceImpl implements TResource {
 
 			@Override
 			public Iterator<EObject> getChildren(Object object) {
-				return object == TResourceImpl.this ? TResourceImpl.this.getContentsAt(instant).iterator()
-						: ((TObject) object).eContentsAt(instant).iterator();
+				return object == TResourceImpl.this ? TResourceImpl.this.getContentsAt(instant).iterator() : ((TObject) object).eContentsAt(instant).iterator();
 			}
 		};
 	}
@@ -185,6 +137,56 @@ public class TResourceImpl extends ResourceImpl implements TResource {
 		return super.getURIFragment(eObject);
 	}
 
+	@Override
+	public TResource at(Instant instant) {
+		return new TResourceAtImpl(this.uri.appendFragment("@" + instant.toString()), this.mvStore, instant);
+	}
+
+	@Override
+	public void load(Map<?, ?> options) throws IOException {
+		try {
+			isLoading = true;
+			if (isLoaded) {
+				return;
+			} else if (!getFile().exists()) {
+				throw new FileNotFoundException(uri.toFileString());
+			} else {
+				this.mvStore = MVStore.open(getFile().getAbsolutePath());
+				this.tStore = createResourceEStore(this.mvStore);
+			}
+			isLoaded = true;
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	@Override
+	public void save(Map<?, ?> options) throws IOException {
+		if (!isLoaded()) {
+			// If a resource is unloaded it's because no contents have been set (or no file
+			// has been read from disk), thus, a save in an unloaded Resource does not make
+			// sense since it's empty. We do nothing in order to be compliant with the EMF
+			// API.
+			return;
+		} else if (mvStore.getFileStore().getFile() == null) {
+			if (!getFile().getParentFile().exists()) {
+				getFile().getParentFile().mkdirs();
+			}
+			MVStore newMvStore = MVStore.open(getFile().getAbsolutePath());
+			if (!newMvStore.getMapNames().isEmpty()) {
+				Logger.log(Logger.SEVERITY_WARNING,
+						NLS.bind("Saving on existing store {0} without previously loading its contents. Contents will be lost.", getFile().toString()));
+				newMvStore.getMapNames().forEach(name -> newMvStore.openMap(name).clear());
+			}
+			mvStore.getMapNames().forEach(name -> newMvStore.openMap(name).putAll(mvStore.openMap(name)));
+			this.mvStore = newMvStore;
+			this.tStore = createResourceEStore(this.mvStore);
+			this.isLoaded = true;
+		}
+
+		mvStore.commit();
+	}
+
 	public static void shutdownWithoutUnload(TResourceImpl resource) {
 		resource.shutdown();
 	}
@@ -192,8 +194,7 @@ public class TResourceImpl extends ResourceImpl implements TResource {
 	protected void shutdown() {
 		this.mvStore.close();
 		this.mvStore = new MVStore.Builder().fileStore(new OffHeapStore()).open();
-		this.tStore = new DirectWriteMapResourceTStoreImpl(this, mvStore);
-		this.isPersistent = false;
+		this.tStore = new MVStoreResourceTStoreImpl(this, mvStore);
 	}
 
 	@Override
@@ -213,12 +214,38 @@ public class TResourceImpl extends ResourceImpl implements TResource {
 	}
 
 	protected SearcheableResourceTStore createResourceEStore(MVStore mvStore) throws IOException {
-		return new IsSetCachingDelegatedTStoreImpl(new SizeCachingDelegatedTStoreImpl(new DirectWriteMapResourceTStoreImpl(this, mvStore)));
+		return new IsSetCachingDelegatedTStoreImpl(new SizeCachingDelegatedTStoreImpl(new MVStoreResourceTStoreImpl(this, mvStore)));
 	}
 
-	@Override
-	public Clock getClock() {
-		return clock;
+	protected File getFile() {
+		return FileUtils.getFile(TURI.createTURI(getURI().appendSegment("mvstore")).toFileString());
+	}
+
+	/**
+	 * Specific {@link TResource} implementation that presents a read-only view of
+	 * an existing {@link TResource} (backed by an existing {@link MVStore})
+	 * 
+	 * @author agomez
+	 *
+	 */
+	static private class TResourceAtImpl extends TResourceImpl {
+
+		private TResourceAtImpl(URI uri, MVStore mvStore, Instant instant) {
+			super(uri, mvStore);
+			this.clock = Clock.fixed(instant, ZoneOffset.UTC);
+			this.tStore = new ROMVStoreResourceTStoreImpl(TResourceAtImpl.this, mvStore);
+			isLoaded = true;
+		}
+
+		@Override
+		public void load(Map<?, ?> options) throws IOException {
+			throw new UnsupportedOperationException("Past TResources cannot be explicitly loaded");
+		}
+
+		@Override
+		public final void save(Map<?, ?> options) throws IOException {
+			throw new UnsupportedOperationException("Past TResources cannot vbe saved");
+		}
 	}
 
 	/**
@@ -295,7 +322,7 @@ public class TResourceImpl extends ResourceImpl implements TResource {
 			return "NonRepeatingClock[" + clock.getZone() + "]";
 		}
 	}
-	
+
 	/**
 	 * Fake {@link EStructuralFeature} that represents the
 	 * {@link Resource#getContents()} feature.
@@ -305,7 +332,7 @@ public class TResourceImpl extends ResourceImpl implements TResource {
 	 */
 	protected static class ResourceContentsEStructuralFeature extends EReferenceImpl {
 		protected static final String RESOURCE__CONTENTS__FEATURE_NAME = "eContents";
-	
+
 		public ResourceContentsEStructuralFeature() {
 			// @formatter:off
 			this.setUpperBound(ETypedElement.UNBOUNDED_MULTIPLICITY);
@@ -316,7 +343,6 @@ public class TResourceImpl extends ResourceImpl implements TResource {
 			// @formatter:on
 		}
 	}
-
 
 	/**
 	 * Dummy {@link EObject} that represents the root entry point for this

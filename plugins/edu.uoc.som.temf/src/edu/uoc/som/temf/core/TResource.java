@@ -69,12 +69,12 @@ public interface TResource extends Resource, Resource.Internal {
 	 */
 	Clock getClock();
 
-//	/**
-//	 * Returns a read-only view of this {@link TResource} at the given
-//	 * {@link Instant}
-//	 * 
-//	 * @param instant
-//	 * @return
-//	 */
-//	TResource at(Instant instant);
+	/**
+	 * Returns a read-only view of this {@link TResource} at the given
+	 * {@link Instant}
+	 * 
+	 * @param instant
+	 * @return
+	 */
+	TResource at(Instant instant);
 }
