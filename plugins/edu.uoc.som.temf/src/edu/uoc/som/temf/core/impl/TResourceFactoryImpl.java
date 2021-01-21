@@ -16,14 +16,13 @@ import org.eclipse.emf.ecore.resource.Resource;
 
 import edu.uoc.som.temf.TURI;
 import edu.uoc.som.temf.core.TResourceFactory;
-import edu.uoc.som.temf.map.impl.MapTResourceImpl;
 
 public class TResourceFactoryImpl implements TResourceFactory {
 
 	@Override
 	public Resource createResource(URI uri) {
 		if (StringUtils.equals(TURI.TEMF_MAP_SCHEME, uri.scheme())) {
-			return new MapTResourceImpl(uri);
+			return new TResourceImpl(uri);
 		} else {
 			return null;
 		}

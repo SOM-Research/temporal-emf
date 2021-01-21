@@ -18,9 +18,9 @@ Export-Package: edu.uoc.som.temf,
  edu.uoc.som.temf.core,
  edu.uoc.som.temf.core.exceptions,
  edu.uoc.som.temf.core.impl,
- edu.uoc.som.temf.estores,
- edu.uoc.som.temf.estores.impl,
- edu.uoc.som.temf.map.impl
+ edu.uoc.som.temf.map.impl,
+ edu.uoc.som.temf.tstores,
+ edu.uoc.som.temf.tstores.impl
 Bundle-ClassPath: .
 DynamicImport-Package: *
 Automatic-Module-Name: edu.uoc.som.temf

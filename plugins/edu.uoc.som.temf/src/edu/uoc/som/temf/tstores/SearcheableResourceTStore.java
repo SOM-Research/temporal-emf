@@ -8,21 +8,20 @@
  * Contributors:
  *     Abel Gómez - initial API and implementation
  *******************************************************************************/
-package edu.uoc.som.temf.estores;
+package edu.uoc.som.temf.tstores;
 
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.InternalEObject.EStore;
 import org.eclipse.emf.ecore.resource.Resource;
 
 /**
- * This interface extends the {@link EStore} interface and allows to establish a
- * mapping between {@link Resource}s and {@link EStore}s
+ * This interface extends the {@link TStore} interface and allows establishing a
+ * mapping between {@link Resource}s and {@link TStore}s
  * 
  * @author agomez
  * 
  */
-public interface SearcheableResourceEStore extends InternalEObject.EStore {
+public interface SearcheableResourceTStore extends TStore {
 
 	/**
 	 * Returns the {@link Resource} to which this {@link EStore} is associated

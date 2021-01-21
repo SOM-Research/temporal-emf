@@ -8,7 +8,7 @@
  * Contributors:
  *     Abel Gómez - initial API and implementation
  *******************************************************************************/
-package edu.uoc.som.temf.map.impl;
+package edu.uoc.som.temf.core.impl;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -51,19 +51,18 @@ import edu.uoc.som.temf.TURI;
 import edu.uoc.som.temf.core.InternalTObject;
 import edu.uoc.som.temf.core.TObject;
 import edu.uoc.som.temf.core.TResource;
-import edu.uoc.som.temf.core.impl.TObjectAdapterFactoryImpl;
-import edu.uoc.som.temf.core.impl.TObjectImpl;
-import edu.uoc.som.temf.estores.SearcheableResourceTStore;
-import edu.uoc.som.temf.estores.TStore;
-import edu.uoc.som.temf.estores.impl.IsSetCachingDelegatedTStoreImpl;
-import edu.uoc.som.temf.estores.impl.SizeCachingDelegatedTStoreImpl;
+import edu.uoc.som.temf.map.impl.DirectWriteMapResourceTStoreImpl;
+import edu.uoc.som.temf.tstores.SearcheableResourceTStore;
+import edu.uoc.som.temf.tstores.TStore;
+import edu.uoc.som.temf.tstores.impl.IsSetCachingDelegatedTStoreImpl;
+import edu.uoc.som.temf.tstores.impl.SizeCachingDelegatedTStoreImpl;
 
-public class MapTResourceImpl extends ResourceImpl implements TResource {
+public class TResourceImpl extends ResourceImpl implements TResource {
 
 	protected static final ResourceContentsEStructuralFeature ROOT_CONTENTS_ESTRUCTURALFEATURE = new ResourceContentsEStructuralFeature();
 
 	protected final DummyRootEObject DUMMY_ROOT_EOBJECT = new DummyRootEObject(this);
-
+	
 	protected SearcheableResourceTStore tStore;
 
 	protected MVStore mvStore;
@@ -72,7 +71,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 
 	protected Clock clock = new NonRepeatingClock(ZoneOffset.UTC);
 
-	public MapTResourceImpl(URI uri) {
+	public TResourceImpl(URI uri) {
 		super(uri);
 		this.mvStore = new MVStore.Builder().fileStore(new OffHeapStore()).open();
 		this.tStore = new DirectWriteMapResourceTStoreImpl(this, mvStore);
@@ -134,6 +133,10 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 		return tStore;
 	}
 
+	public MVStore getMvStore() {
+		return mvStore;
+	}
+	
 	@Override
 	public EList<EObject> getContents() {
 		return new ResourceContentsEStoreEList(DUMMY_ROOT_EOBJECT, ROOT_CONTENTS_ESTRUCTURALFEATURE, tStore);
@@ -152,7 +155,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 
 			@Override
 			public Iterator<EObject> getChildren(Object object) {
-				return object == MapTResourceImpl.this ? MapTResourceImpl.this.getContentsAt(instant).iterator()
+				return object == TResourceImpl.this ? TResourceImpl.this.getContentsAt(instant).iterator()
 						: ((TObject) object).eContentsAt(instant).iterator();
 			}
 		};
@@ -182,7 +185,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 		return super.getURIFragment(eObject);
 	}
 
-	public static void shutdownWithoutUnload(MapTResourceImpl resource) {
+	public static void shutdownWithoutUnload(TResourceImpl resource) {
 		resource.shutdown();
 	}
 
@@ -292,7 +295,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			return "NonRepeatingClock[" + clock.getZone() + "]";
 		}
 	}
-
+	
 	/**
 	 * Fake {@link EStructuralFeature} that represents the
 	 * {@link Resource#getContents()} feature.
@@ -302,7 +305,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 	 */
 	protected static class ResourceContentsEStructuralFeature extends EReferenceImpl {
 		protected static final String RESOURCE__CONTENTS__FEATURE_NAME = "eContents";
-
+	
 		public ResourceContentsEStructuralFeature() {
 			// @formatter:off
 			this.setUpperBound(ETypedElement.UNBOUNDED_MULTIPLICITY);
@@ -314,6 +317,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 		}
 	}
 
+
 	/**
 	 * Dummy {@link EObject} that represents the root entry point for this
 	 * {@link Resource}
@@ -324,7 +328,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 	protected final class DummyRootEObject extends TObjectImpl {
 		protected static final String ROOT_EOBJECT_ID = "ROOT";
 
-		public DummyRootEObject(Resource.Internal resource) {
+		protected DummyRootEObject(Resource.Internal resource) {
 			super();
 			this.id = ROOT_EOBJECT_ID;
 			eSetDirectResource(resource);
@@ -355,7 +359,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 
 		@Override
 		public Object getNotifier() {
-			return MapTResourceImpl.this;
+			return TResourceImpl.this;
 		}
 
 		@Override
@@ -365,7 +369,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 
 		@Override
 		protected boolean isNotificationRequired() {
-			return MapTResourceImpl.this.eNotificationRequired();
+			return TResourceImpl.this.eNotificationRequired();
 		}
 
 		@Override
@@ -386,16 +390,16 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 		@Override
 		public NotificationChain inverseAdd(EObject object, NotificationChain notifications) {
 			InternalEObject eObject = (InternalEObject) object;
-			notifications = eObject.eSetResource(MapTResourceImpl.this, notifications);
-			MapTResourceImpl.this.attached(eObject);
+			notifications = eObject.eSetResource(TResourceImpl.this, notifications);
+			TResourceImpl.this.attached(eObject);
 			return notifications;
 		}
 
 		@Override
 		public NotificationChain inverseRemove(EObject object, NotificationChain notifications) {
 			InternalEObject eObject = (InternalEObject) object;
-			if (MapTResourceImpl.this.isLoaded || unloadingContents != null) {
-				MapTResourceImpl.this.detached(eObject);
+			if (TResourceImpl.this.isLoaded || unloadingContents != null) {
+				TResourceImpl.this.detached(eObject);
 			}
 			return eObject.eSetResource(null, notifications);
 		}
@@ -413,7 +417,7 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			hardLinksList.add(object);
 			eObject.eAllContents().forEachRemaining(e -> hardLinksList.add(e));
 			// Iterate using the hard links list instead eAllContents
-			hardLinksList.forEach(e -> TObjectAdapterFactoryImpl.getAdapter(e, InternalTObject.class).tSetResource(MapTResourceImpl.this));
+			hardLinksList.forEach(e -> TObjectAdapterFactoryImpl.getAdapter(e, InternalTObject.class).tSetResource(TResourceImpl.this));
 			super.delegateAdd(index, object);
 		}
 
@@ -460,10 +464,10 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 		}
 
 		protected void loaded() {
-			if (!MapTResourceImpl.this.isLoaded()) {
-				Notification notification = MapTResourceImpl.this.setLoaded(true);
+			if (!TResourceImpl.this.isLoaded()) {
+				Notification notification = TResourceImpl.this.setLoaded(true);
 				if (notification != null) {
-					MapTResourceImpl.this.eNotify(notification);
+					TResourceImpl.this.eNotify(notification);
 				}
 			}
 		}
@@ -474,4 +478,5 @@ public class MapTResourceImpl extends ResourceImpl implements TResource {
 			}
 		}
 	}
+
 }

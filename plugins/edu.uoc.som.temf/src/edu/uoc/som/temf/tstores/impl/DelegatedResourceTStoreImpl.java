@@ -8,7 +8,7 @@
  * Contributors:
  *     Abel Gómez - initial API and implementation
  *******************************************************************************/
-package edu.uoc.som.temf.estores.impl;
+package edu.uoc.som.temf.tstores.impl;
 
 import java.time.Instant;
 import java.util.SortedMap;
@@ -19,7 +19,7 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.resource.Resource;
 
-import edu.uoc.som.temf.estores.SearcheableResourceTStore;
+import edu.uoc.som.temf.tstores.SearcheableResourceTStore;
 
 
 /**
@@ -47,7 +47,7 @@ public class DelegatedResourceTStoreImpl implements SearcheableResourceTStore {
 	public EObject getEObject(String id) {
 		return tStore.getEObject(id);
 	}
-
+	
 	public Object getAt(Instant instant, InternalEObject object, EStructuralFeature feature, int index) {
 		return tStore.getAt(instant, object, feature, index);
 	}

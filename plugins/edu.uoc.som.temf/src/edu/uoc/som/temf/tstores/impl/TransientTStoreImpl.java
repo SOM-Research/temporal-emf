@@ -8,7 +8,7 @@
  * Contributors:
  *     Abel Gómez - initial API and implementation
  *******************************************************************************/
-package edu.uoc.som.temf.estores.impl;
+package edu.uoc.som.temf.tstores.impl;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.InternalEObject.EStore;
 
-import edu.uoc.som.temf.estores.TStore;
+import edu.uoc.som.temf.tstores.TStore;
 
 /**
  * A simple {@link EStore} implementation that uses synchronized collections to

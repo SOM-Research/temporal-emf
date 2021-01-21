@@ -25,12 +25,11 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
-import edu.uoc.som.temf.Logger;
 import edu.uoc.som.temf.TURI;
 import edu.uoc.som.temf.core.TResource;
-import edu.uoc.som.temf.estores.TStore;
 import edu.uoc.som.temf.testmodel.Node;
 import edu.uoc.som.temf.testmodel.TestmodelFactory;
+import edu.uoc.som.temf.tstores.TStore;
 
 class TestTemf {
 
@@ -204,7 +203,7 @@ class TestTemf {
 	}
 
 	@Test
-	void testCountTResource() throws Exception {
+	void testCountTResourceContents() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
 		TResource resource = createTResource(resourceFile);
 		resource.save(Collections.emptyMap());
@@ -214,35 +213,16 @@ class TestTemf {
 	}
 
 	@Test
-	void testCountTResourceAt() throws Exception {
+	void testCountTResourceContentsAt() throws Exception {
 		File resourceFile = TestUtils.createNonExistingTempFile();
 		TResource resource = createTResource(resourceFile);
 		resource.save(Collections.emptyMap());
 		List<PopulationInfo> populationInfo = populateResourceRandomly(resource);
-		Logger.log(Logger.SEVERITY_INFO, "TResource has " + populationInfo.size() + " elements");
 
-		for (int i = 1; i < populationInfo.size(); i++) {
-			if (populationInfo.get(i - 1).instant.isAfter(populationInfo.get(i).instant)) {
-				assertEquals(populationInfo.size(), countResourceContents(resource), "Check that PopulationInfo elements are ordered by creation date");
-			}
-		}
-
-		printResourceContents(resource);
-		
-		// Pick a position and an instant
 		int position = (int) (populationInfo.size() * 0.75);
 		Instant instant = populationInfo.get(position).instant;
-		Logger.log(Logger.SEVERITY_INFO, "TResource had " + (position + 1) + " elements at " + instant);
 
 		AtomicInteger count = new AtomicInteger();
-
-		// Count using getAllContentsAt
-		count.set(0);
-		resource.getAllContentsAt(instant).forEachRemaining((e) -> count.incrementAndGet());
-		assertEquals(position + 1, count.get(), "Check TResource has all the created elements using getAllContentsAt");
-
-		// Count (manually) using getContentsAt
-		count.set(0);
 		Stack<EObject> remaining = new Stack<>();
 		remaining.addAll(resource.getContentsAt(instant));
 		do {
@@ -253,6 +233,61 @@ class TestTemf {
 		assertEquals(position + 1, count.get(), "Check TResource has all the created elements using getContentsAt");
 	}
 
+	@Test
+	void testCountTResourceAllContentsAt() throws Exception {
+		File resourceFile = TestUtils.createNonExistingTempFile();
+		TResource resource = createTResource(resourceFile);
+		resource.save(Collections.emptyMap());
+		List<PopulationInfo> populationInfo = populateResourceRandomly(resource);
+		
+		int position = (int) (populationInfo.size() * 0.75);
+		Instant instant = populationInfo.get(position).instant;
+		
+		AtomicInteger count = new AtomicInteger();
+		Stack<EObject> remaining = new Stack<>();
+		remaining.addAll(resource.getContentsAt(instant));
+		do {
+			EObject elt = remaining.pop();
+			count.incrementAndGet();
+			remaining.addAll(((Node) elt).getChildrenAt(instant));
+		} while (!remaining.empty());
+		assertEquals(position + 1, count.get(), "Check TResource has all the created elements using getContentsAt");
+	}
+	
+//	@Test
+//	void testTResourceAt() throws Exception {
+//		File resourceFile = TestUtils.createNonExistingTempFile();
+//		TResource resource = createTResource(resourceFile);
+//		resource.save(Collections.emptyMap());
+//		List<PopulationInfo> populationInfo = populateResourceRandomly(resource);
+//
+//		printResourceContents(resource);
+//		
+//		// Pick a position and an instant
+//		int position = (int) (populationInfo.size() * 0.75);
+//		Instant instant = populationInfo.get(position).instant;
+//		Logger.log(Logger.SEVERITY_INFO, "TResource had " + (position + 1) + " elements at " + instant);
+//
+//		AtomicInteger count = new AtomicInteger();
+//
+//		// Count using getAllContentsAt
+//		count.set(0);
+//		resource.at(instant).getAllContents().forEachRemaining((e) -> count.incrementAndGet());
+//		assertEquals(position + 1, count.get(), "Check TResource has all the created elements using getAllContentsAt");
+//
+//		// Count (manually) using getContentsAt
+//		count.set(0);
+//		Stack<EObject> remaining = new Stack<>();
+//		remaining.addAll(resource.at(instant).getContents());
+//		do {
+//			EObject elt = remaining.pop();
+//			count.incrementAndGet();
+//			remaining.addAll(((Node) elt).getChildren());
+//		} while (!remaining.empty());
+//		assertEquals(position + 1, count.get(), "Check TResource has all the created elements using getContentsAt");
+//	}
+
+	
 	/**
 	 * Utility method to print the resource contents in a formatted way
 	 * 
@@ -332,6 +367,12 @@ class TestTemf {
 			elements.add(child);
 			selection = elements.get(random.nextInt(elements.size()));
 		} while (elements.size() < 50 || random.nextInt(50) != 0);
+		
+		for (int i = 1; i < populationInfo.size(); i++) {
+			if (populationInfo.get(i - 1).instant.isAfter(populationInfo.get(i).instant)) {
+				assertEquals(populationInfo.size(), countResourceContents(resource), "Check that PopulationInfo elements are ordered by creation date");
+			}
+		}
 		
 		return populationInfo;
 	}

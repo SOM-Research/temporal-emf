@@ -8,7 +8,7 @@
  * Contributors:
  *     Abel Gómez - initial API and implementation
  *******************************************************************************/
-package edu.uoc.som.temf.estores.impl;
+package edu.uoc.som.temf.tstores.impl;
 
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
@@ -17,8 +17,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
-import edu.uoc.som.temf.estores.SearcheableResourceEStore;
-import edu.uoc.som.temf.estores.SearcheableResourceTStore;
+import edu.uoc.som.temf.tstores.SearcheableResourceTStore;
 
 /**
  * A {@link SearcheableResourceEStore} wrapper that caches the size data

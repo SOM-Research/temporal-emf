@@ -8,7 +8,7 @@
  * Contributors:
  *     Abel Gómez - initial API and implementation
  *******************************************************************************/
-package edu.uoc.som.temf.estores;
+package edu.uoc.som.temf.tstores;
 
 import java.time.Instant;
 import java.util.SortedMap;

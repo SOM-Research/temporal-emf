@@ -42,7 +42,7 @@ import edu.uoc.som.temf.core.TObject;
 import edu.uoc.som.temf.core.TResource;
 import edu.uoc.som.temf.core.exceptions.EClassNotFoundException;
 import edu.uoc.som.temf.core.impl.TObjectAdapterFactoryImpl;
-import edu.uoc.som.temf.estores.SearcheableResourceTStore;
+import edu.uoc.som.temf.tstores.SearcheableResourceTStore;
 
 public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTStore {
 
@@ -50,31 +50,32 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 	protected static final String INSTANCE_OF = "instanceOf";
 	protected static final String CONTAINER = "eContainer";
 
-	protected LoadingCache<String, InternalTObject> loadedEObjects = CacheBuilder.newBuilder().softValues().build(new CacheLoader<String, InternalTObject>() {
+	protected LoadingCache<String, TObject> loadedEObjects = CacheBuilder.newBuilder().softValues().build(new CacheLoader<String, TObject>() {
 		@Override
-		public InternalTObject load(String key) throws Exception {
-				EClass eClass = resolveInstanceOf(key);
-				if (eClass == null) {
-					throw new EClassNotFoundException(MessageFormat.format("Element {0} does not have an associated EClass", key));
-				}
-				EObject eObject = EcoreUtil.create(eClass);
-				InternalTObject tObject = TObjectAdapterFactoryImpl.getAdapter(eObject, InternalTObject.class);
-				tObject.tSetId(key);
-				return tObject;
+		public TObject load(String key) throws Exception {
+			EClass eClass = resolveInstanceOf(key);
+			if (eClass == null) {
+				throw new EClassNotFoundException(MessageFormat.format("Element {0} does not have an associated EClass", key));
 			}
+			EObject eObject = EcoreUtil.create(eClass);
+			InternalTObject tObject = TObjectAdapterFactoryImpl.getAdapter(eObject, InternalTObject.class);
+			tObject.tSetId(key);
+			tObject.tSetResource(getResource());
+			return tObject;
+		}
 	});
-	
+
 	protected MVStore mvStore;
-	
+
 	protected MVMap<DataKey, Object> dataMap;
-	
+
 	protected MVMap<String, EClassInfo> instanceOfMap;
 
 	protected MVMap<ContainerKey, ContainerInfo> containersMap;
-	
+
 	protected TResource resource;
 
-	DirectWriteMapResourceTStoreImpl(TResource resource, MVStore mvStore) {
+	public DirectWriteMapResourceTStoreImpl(TResource resource, MVStore mvStore) {
 		try {
 			this.mvStore = mvStore;
 			this.resource = (TResource) resource;
@@ -87,7 +88,6 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 			throw new RuntimeException(message, e);
 		}
 	}
-
 
 	@Override
 	public Resource.Internal getResource() {
@@ -142,28 +142,29 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 			throw new IllegalArgumentException(feature.toString());
 		}
 	}
-	
+
 	protected SortedMap<Instant, Object> getAllBetween(Instant startInstant, Instant endInstant, TObject object, EAttribute eAttribute, int index) {
 		SortedMap<Instant, Object> result = new TreeMap<>();
 		TreeMap<DataKey, Object> all = getAllFromDataMap(startInstant, endInstant, object, eAttribute);
 		if (!eAttribute.isMany()) {
-			all.forEach((key, obj) ->  result.put(key.instant, parseMapValue(eAttribute, (String) obj)));
+			all.forEach((key, obj) -> result.put(key.instant, parseMapValue(eAttribute, (String) obj)));
 		} else {
-			all.forEach((key, obj) ->  result.put(key.instant, parseMapValue(eAttribute, parseMapValue(eAttribute, ((Object[]) obj)[index]))));
+			all.forEach((key, obj) -> result.put(key.instant, parseMapValue(eAttribute, parseMapValue(eAttribute, ((Object[]) obj)[index]))));
 		}
 		return result;
 	}
-	
+
 	protected SortedMap<Instant, Object> getAllBetween(Instant startInstant, Instant endInstant, TObject object, EReference eReference, int index) {
 		SortedMap<Instant, Object> result = new TreeMap<>();
 		TreeMap<DataKey, Object> all = getAllFromDataMap(startInstant, endInstant, object, eReference);
 		if (!eReference.isMany()) {
-			all.forEach((key, obj) ->  result.put(key.instant, getEObject((String) obj)));
+			all.forEach((key, obj) -> result.put(key.instant, getEObject((String) obj)));
 		} else {
-			all.forEach((key, obj) ->  result.put(key.instant, getEObject((String) ((Object[]) obj)[index])));
+			all.forEach((key, obj) -> result.put(key.instant, getEObject((String) ((Object[]) obj)[index])));
 		}
 		return result;
 	}
+
 	@Override
 	public Object set(InternalEObject object, EStructuralFeature feature, int index, Object value) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
@@ -183,7 +184,7 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 			return parseMapValue(eAttribute, oldValue);
 		} else {
 			Object[] array = (Object[]) getFromDataMap(object, eAttribute);
-			Object oldValue = array[index]; 
+			Object oldValue = array[index];
 			array[index] = serializeToMapValue(eAttribute, value);
 			dataMap.put(DataKey.from(object.tId(), eAttribute.getName(), now()), array);
 			return parseMapValue(eAttribute, oldValue);
@@ -205,19 +206,16 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 		}
 	}
 
-
 	@Override
 	public boolean isSet(InternalEObject object, EStructuralFeature feature) {
 		return isSetAt(now(), object, feature);
 	}
 
-	
 	@Override
 	public boolean isSetAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
 		return getFromDataMap(instant, tObject, feature) != null;
 	}
-
 
 	@Override
 	public void add(InternalEObject object, EStructuralFeature feature, int index, Object value) {
@@ -288,18 +286,17 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 		return movedElement;
 	}
 
-
 	@Override
 	public void unset(InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		dataMap.remove(DataKey.from(tObject.tId(), feature.getName(), now()));
+		dataMap.put(DataKey.from(tObject.tId(), feature.getName(), now()), null);
 	}
 
 	@Override
 	public boolean isEmpty(InternalEObject object, EStructuralFeature feature) {
 		return isEmptyAt(now(), object, feature);
 	}
-	
+
 	@Override
 	public boolean isEmptyAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		return sizeAt(instant, object, feature) == 0;
@@ -309,7 +306,7 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 	public int size(InternalEObject object, EStructuralFeature feature) {
 		return sizeAt(now(), object, feature);
 	}
-	
+
 	@Override
 	public int sizeAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
@@ -326,12 +323,12 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 	public boolean containsAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
 		return indexOfAt(instant, object, feature, value) != -1;
 	}
-	
+
 	@Override
 	public int indexOf(InternalEObject object, EStructuralFeature feature, Object value) {
 		return indexOfAt(now(), object, feature, value);
 	}
-	
+
 	@Override
 	public int indexOfAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
@@ -351,7 +348,7 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 	public int lastIndexOf(InternalEObject object, EStructuralFeature feature, Object value) {
 		return lastIndexOfAt(now(), object, feature, value);
 	}
-	
+
 	@Override
 	public int lastIndexOfAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
@@ -377,7 +374,7 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 	public Object[] toArray(InternalEObject object, EStructuralFeature feature) {
 		return toArrayAt(now(), object, feature);
 	}
-	
+
 	@Override
 	public Object[] toArrayAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		int size = sizeAt(instant, object, feature);
@@ -408,29 +405,31 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 		}
 		return result;
 	}
-	
+
 	@Override
 	public SortedMap<Instant, Object[]> toArrayAllBetween(Instant startInstant, Instant endInstant, InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
 
 		SortedMap<Instant, Object[]> result = new TreeMap<>();
 		TreeMap<DataKey, Object> all = getAllFromDataMap(startInstant, endInstant, tObject, feature);
-		
+
 		if (feature instanceof EAttribute) {
-			all.forEach((key, obj) ->  result.put(key.instant, Arrays.asList((Object[]) obj).stream().map(v -> parseMapValue((EAttribute) feature, (String) v)).toArray()));
+			all.forEach((key, obj) -> result.put(key.instant,
+					Arrays.asList((Object[]) obj).stream().map(v -> parseMapValue((EAttribute) feature, (String) v)).toArray()));
 		} else if (feature instanceof EReference) {
-			all.forEach((key, obj) ->  result.put(key.instant, Arrays.asList((Object[]) obj).stream().map(v -> getEObject((String) v)).toArray()));
+			all.forEach((key, obj) -> result.put(key.instant, Arrays.asList((Object[]) obj).stream().map(v -> getEObject((String) v)).toArray()));
 		} else {
 			throw new IllegalArgumentException(feature.toString());
 		}
-		
+
 		return result;
 	}
+
 	@Override
 	public int hashCode(InternalEObject object, EStructuralFeature feature) {
 		return hashCodeAt(now(), object, feature);
 	}
-	
+
 	@Override
 	public int hashCodeAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		return toArrayAt(instant, object, feature).hashCode();
@@ -438,9 +437,8 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 
 	@Override
 	public InternalEObject getContainer(InternalEObject object) {
-		return getContainerAt(now(), object); 
+		return getContainerAt(now(), object);
 	}
-
 
 	@Override
 	public InternalEObject getContainerAt(Instant instant, InternalEObject object) {
@@ -451,7 +449,6 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 		}
 		return null;
 	}
-
 
 	@Override
 	public EStructuralFeature getContainingFeature(InternalEObject object) {
@@ -475,35 +472,14 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 		throw new UnsupportedOperationException();
 	}
 
-
 	@Override
 	public EObject getEObject(String id) {
 		if (id == null) {
 			return null;
 		}
-		InternalTObject tObject = loadedEObjects.getUnchecked(id);
-		if (tObject == null) {
-			EClass eClass = resolveInstanceOf(id);
-			if (eClass != null) {
-				EObject eObject = EcoreUtil.create(eClass);
-				if (eObject instanceof InternalTObject) {
-					tObject = (InternalTObject) eObject;
-				} else {
-					tObject = TObjectAdapterFactoryImpl.getAdapter(eObject, InternalTObject.class);
-				}
-				tObject.tSetId(id.toString());
-			} else {
-				Logger.log(Logger.SEVERITY_ERROR, 
-						MessageFormat.format("Element {0} does not have an associated EClass", id));
-			}
-			loadedEObjects.put(id, tObject);
-		}
-		if (tObject.tResource() != getResource()) {
-			tObject.tSetResource(getResource());
-		}
+		TObject tObject = loadedEObjects.getUnchecked(id);
 		return tObject;
 	}
-	
 
 	protected EClass resolveInstanceOf(String id) {
 		EClassInfo eClassInfo = instanceOfMap.get(id);
@@ -513,7 +489,7 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 		}
 		return null;
 	}
-	
+
 	protected void updateContainment(TObject object, EReference eReference, TObject referencedObject) {
 		if (eReference.isContainment()) {
 			ContainerInfo lower = containersMap.get(containersMap.ceilingKey(ContainerKey.from(referencedObject.tId(), now())));
@@ -522,14 +498,13 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 			}
 		}
 	}
-	
+
 	protected void updateInstanceOf(TObject object) {
 		EClassInfo info = instanceOfMap.get(object.tId());
 		if (info == null) {
 			instanceOfMap.put(object.tId(), EClassInfo.from(object.eClass().getEPackage().getNsURI(), object.eClass().getName()));
 		}
 	}
-
 
 	protected static Object parseMapValue(EAttribute eAttribute, Object property) {
 		return property != null ? EcoreUtil.createFromString(eAttribute.getEAttributeType(), property.toString()) : null;
@@ -538,17 +513,18 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 	protected static String serializeToMapValue(EAttribute eAttribute, Object value) {
 		return value != null ? EcoreUtil.convertToString(eAttribute.getEAttributeType(), value) : null;
 	}
-	
+
 	protected Object getFromDataMap(TObject object, EStructuralFeature feature) {
-		return getFromDataMap(Instant.MAX, object, feature);
+		return getFromDataMap(now(), object, feature);
 	}
 
 	/**
 	 * Gets the latest value for {@link EStructuralFeature} {@code feature} from the
-	 * data map for the {@link TObject} {@code object} before <code>endInstant</code>. 
+	 * data map for the {@link TObject} {@code object} before
+	 * <code>endInstant</code>.
 	 * 
-	 * @param endInstant
-	 *            the end instant or <code>null</null> to indicate the latest possible time.
+	 * @param endInstant the end instant or <code>null</null> to indicate the latest
+	 *                   possible time.
 	 * @param object
 	 * @param feature
 	 * @return The value of the {@code feature}. It can be a {@link String} for
@@ -563,7 +539,7 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 			return null;
 		}
 	}
-	
+
 	protected TreeMap<DataKey, Object> getAllFromDataMap(Instant startInstant, Instant endInstant, TObject object, EStructuralFeature feature) {
 		TreeMap<DataKey, Object> result = new TreeMap<>();
 		DataKey firstKey = dataMap.ceilingKey(DataKey.from(object.tId(), feature.getName(), startInstant));
@@ -573,27 +549,27 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 			result.put(c.getKey(), c.getValue());
 			c.next();
 		};
-		return result; 
+		return result;
 	}
 
 	private Instant now() {
 		return resource.getClock().instant();
 	}
-	
+
 	private static class DataKey implements Serializable {
-		
+
 		private static final long serialVersionUID = 1L;
-		
+
 		public final String id;
 		public final String feature;
 		public final Instant instant;
-		
+
 		private DataKey(String id, String feature, Instant instant) {
 			this.id = id;
 			this.feature = feature;
 			this.instant = instant;
 		}
-		
+
 		public static DataKey from(String id, String feature, Instant instant) {
 			return new DataKey(id, feature, instant);
 		}
@@ -635,21 +611,20 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 			return true;
 		}
 
-
 	}
-	
+
 	private static class ContainerKey implements Serializable {
-		
+
 		private static final long serialVersionUID = 1L;
-		
+
 		public final String id;
 		public final Instant instant;
-		
+
 		private ContainerKey(String id, Instant instant) {
 			this.id = id;
 			this.instant = instant;
 		}
-		
+
 		public static ContainerKey from(String id, Instant instant) {
 			return new ContainerKey(id, instant);
 		}
@@ -686,38 +661,38 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 		}
 
 	}
-	
+
 	private static class ContainerInfo implements Serializable {
-		
+
 		private static final long serialVersionUID = 1L;
-		
+
 		public final String containerId;
-		
+
 		public final String containingFeatureName;
-		
+
 		private ContainerInfo(String containerId, String containingFeatureName) {
 			this.containerId = containerId;
 			this.containingFeatureName = containingFeatureName;
 		}
-		
+
 		public static ContainerInfo from(String containerId, String containingFeatureName) {
 			return new ContainerInfo(containerId, containingFeatureName);
 		}
 	}
-	
+
 	private static class EClassInfo implements Serializable {
-		
+
 		private static final long serialVersionUID = 1L;
-		
+
 		public final String nsURI;
-		
+
 		public final String className;
-		
+
 		private EClassInfo(String nsURI, String className) {
 			this.nsURI = nsURI;
 			this.className = className;
 		}
-		
+
 		public static EClassInfo from(String nsURI, String className) {
 			return new EClassInfo(nsURI, className);
 		}

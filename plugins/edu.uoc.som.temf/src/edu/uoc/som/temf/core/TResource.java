@@ -18,7 +18,7 @@ import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 
-import edu.uoc.som.temf.estores.TStore;
+import edu.uoc.som.temf.tstores.TStore;
 
 /**
  * {@link TResource} extends the EMF {@link Resource} API by providing some
@@ -68,4 +68,13 @@ public interface TResource extends Resource, Resource.Internal {
 	 * @return the {@link TResource} {@link Clock}
 	 */
 	Clock getClock();
+
+//	/**
+//	 * Returns a read-only view of this {@link TResource} at the given
+//	 * {@link Instant}
+//	 * 
+//	 * @param instant
+//	 * @return
+//	 */
+//	TResource at(Instant instant);
 }

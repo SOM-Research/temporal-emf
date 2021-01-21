@@ -8,7 +8,7 @@
  * Contributors:
  *     Abel Gómez - initial API and implementation
  *******************************************************************************/
-package edu.uoc.som.temf.estores.impl;
+package edu.uoc.som.temf.tstores.impl;
 
 import java.text.MessageFormat;
 import java.time.Instant;
@@ -22,8 +22,7 @@ import org.eclipse.emf.ecore.resource.Resource;
 
 import edu.uoc.som.temf.Logger;
 import edu.uoc.som.temf.TEmfPlugin;
-import edu.uoc.som.temf.estores.SearcheableResourceEStore;
-import edu.uoc.som.temf.estores.SearcheableResourceTStore;
+import edu.uoc.som.temf.tstores.SearcheableResourceTStore;
 
 /**
  * A {@link SearcheableResourceEStore} wrapper that logs every call to its

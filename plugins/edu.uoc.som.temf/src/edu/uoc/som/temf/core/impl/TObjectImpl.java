@@ -33,8 +33,8 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import edu.uoc.som.temf.core.InternalTObject;
 import edu.uoc.som.temf.core.TObject;
 import edu.uoc.som.temf.core.TResource;
-import edu.uoc.som.temf.estores.TStore;
-import edu.uoc.som.temf.estores.impl.OwnedTransientTStoreImpl;
+import edu.uoc.som.temf.tstores.TStore;
+import edu.uoc.som.temf.tstores.impl.OwnedTransientTStoreImpl;
 
 public class TObjectImpl extends MinimalEStoreEObjectImpl implements InternalTObject {
 
