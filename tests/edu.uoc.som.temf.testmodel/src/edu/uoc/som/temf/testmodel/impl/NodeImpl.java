@@ -113,6 +113,16 @@ public class NodeImpl extends TObjectImpl implements Node {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
+	public Instant whenSetName() {
+		return eWhenSet(TestmodelPackage.Literals.NODE__NAME);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public SortedMap<Date,String> getNameAllBetween(Instant start, Instant end) {
@@ -149,6 +159,16 @@ public class NodeImpl extends TObjectImpl implements Node {
 	@Override
 	public boolean isSetChildrenAt(Instant instant) {
 		return eIsSetAt(instant, TestmodelPackage.Literals.NODE__CHILDREN);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Instant whenSetChildren() {
+		return eWhenSet(TestmodelPackage.Literals.NODE__CHILDREN);
 	}
 
 	/**

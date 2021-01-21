@@ -235,6 +235,11 @@ public class TObjectImpl extends MinimalEStoreEObjectImpl implements InternalTOb
 	}
 	
 	@Override
+	public Instant eWhenSet(EStructuralFeature feature) {
+		return eStore().whenSet(this, feature);
+	}
+	
+	@Override
 	public SortedMap<Instant, Object> eGetAllBetween(Instant start, Instant end, EStructuralFeature feature) {
 		return dynamicGetAllBetween(start, end, eDynamicFeatureID(feature));
 	}

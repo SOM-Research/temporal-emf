@@ -183,6 +183,11 @@ public class TransientTStoreImpl implements TStore {
 	}
 
 	@Override
+	public Instant whenSet(InternalEObject object, EStructuralFeature feature) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public void unset(InternalEObject eObject, EStructuralFeature feature) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
 		if (!feature.isMany()) {

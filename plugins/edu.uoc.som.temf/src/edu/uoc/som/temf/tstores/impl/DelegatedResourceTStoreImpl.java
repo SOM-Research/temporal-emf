@@ -113,6 +113,11 @@ public class DelegatedResourceTStoreImpl implements SearcheableResourceTStore {
 	public boolean isSetAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		return tStore.isSetAt(instant, object, feature);
 	}
+	
+	@Override
+	public Instant whenSet(InternalEObject object, EStructuralFeature feature) {
+		return tStore.whenSet(object, feature);
+	}
 
 	public void unset(InternalEObject object, EStructuralFeature feature) {
 		tStore.unset(object, feature);

@@ -10,4 +10,5 @@ Contributors:
 -%>
 <%@include file="getAtGenFeature.javajetinc" %>
 <%@include file="isSetAtGenFeature.javajetinc" %>
+<%@include file="whenSetGenFeature.javajetinc" %>
 <%@include file="getAllBetweenGenFeature.javajetinc" %>

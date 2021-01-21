@@ -81,6 +81,16 @@ public interface Node extends TObject {
 	boolean isSetNameAt(Instant instant);
 
 	/**
+	 * Returns the instant when the value of the '{@link edu.uoc.som.temf.testmodel.Node#getName <em>Name</em>}' attribute was last modified.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return when the value of the '<em>Name</em>' attribute was last set.
+	 * @see #isSetName()
+	 * @generated
+	 */
+	Instant whenSetName();
+
+	/**
 	 * Returns the value of the '<em><b>Name</b></em>' attribute in the given time span.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -121,6 +131,16 @@ public interface Node extends TObject {
 	 * @generated
 	 */
 	boolean isSetChildrenAt(Instant instant);
+
+	/**
+	 * Returns the instant when the value of the '{@link edu.uoc.som.temf.testmodel.Node#getChildren <em>Children</em>}' containment reference list was last modified.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return when the value of the '<em>Children</em>' containment reference list was last set.
+	 * @see #isSetChildren()
+	 * @generated
+	 */
+	Instant whenSetChildren();
 
 	/**
 	 * Returns the value of the '<em><b>Children</b></em>' containment reference list in the given time span.

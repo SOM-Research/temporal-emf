@@ -80,6 +80,9 @@ public interface TStore extends InternalEObject.EStore {
 	 */
 	boolean isSetAt(Instant instant, InternalEObject object, EStructuralFeature feature);
 
+	//TODO: Javadoc
+	Instant whenSet(InternalEObject object, EStructuralFeature feature);
+	
 	/**
 	 * Returns whether the {@link EObject#eGet(EStructuralFeature,boolean) content}
 	 * of the object's feature is empty at a given instant.

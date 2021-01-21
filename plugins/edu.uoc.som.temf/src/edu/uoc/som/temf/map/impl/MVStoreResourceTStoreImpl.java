@@ -13,7 +13,9 @@ package edu.uoc.som.temf.map.impl;
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.time.Instant;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
+import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -216,6 +218,12 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
 		return getFromDataMap(instant, tObject, feature) != null;
 	}
+	
+	@Override
+	public Instant whenSet(InternalEObject object, EStructuralFeature feature) {
+		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
+		return getFromDataMap(now(), tObject, feature).getKey().instant;
+	}
 
 	@Override
 	public void add(InternalEObject object, EStructuralFeature feature, int index, Object value) {
@@ -310,7 +318,7 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	@Override
 	public int sizeAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		Object[] array = (Object[]) getFromDataMap(instant, tObject, feature);
+		Object[] array = (Object[]) getFromDataMap(instant, tObject, feature).getValue();
 		return array != null ? array.length : 0;
 	}
 
@@ -332,7 +340,7 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	@Override
 	public int indexOfAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		Object[] array = (Object[]) getFromDataMap(instant, tObject, feature);
+		Object[] array = (Object[]) getFromDataMap(instant, tObject, feature).getValue();
 		if (array == null) {
 			return -1;
 		}
@@ -352,7 +360,7 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	@Override
 	public int lastIndexOfAt(Instant instant, InternalEObject object, EStructuralFeature feature, Object value) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		Object[] array = (Object[]) getFromDataMap(instant, tObject, feature);
+		Object[] array = (Object[]) getFromDataMap(instant, tObject, feature).getValue();
 		if (array == null) {
 			return -1;
 		}
@@ -531,10 +539,10 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	 *         single-valued {@link EStructuralFeature}s or a {@link String}[] for
 	 *         many-valued {@link EStructuralFeature}s
 	 */
-	protected Object getFromDataMap(Instant endInstant, TObject object, EStructuralFeature feature) {
+	protected Entry<DataKey, Object> getFromDataMap(Instant endInstant, TObject object, EStructuralFeature feature) {
 		DataKey floorKey = dataMap.floorKey(DataKey.from(object.tId(), feature.getName(), endInstant));
 		if (floorKey != null && object.tId().equals(floorKey.id) && feature.getName().equals(floorKey.feature)) {
-			return dataMap.get(floorKey);
+			return new SimpleEntry<DataKey, Object>(floorKey, dataMap.get(floorKey));
 		} else {
 			return null;
 		}
