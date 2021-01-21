@@ -44,7 +44,7 @@ import edu.uoc.som.temf.core.exceptions.EClassNotFoundException;
 import edu.uoc.som.temf.core.impl.TObjectAdapterFactoryImpl;
 import edu.uoc.som.temf.tstores.SearcheableResourceTStore;
 
-public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTStore {
+public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 
 	protected static final String DATA = "data";
 	protected static final String INSTANCE_OF = "instanceOf";
@@ -75,7 +75,7 @@ public class DirectWriteMapResourceTStoreImpl implements SearcheableResourceTSto
 
 	protected TResource resource;
 
-	public DirectWriteMapResourceTStoreImpl(TResource resource, MVStore mvStore) {
+	public MVStoreResourceTStoreImpl(TResource resource, MVStore mvStore) {
 		try {
 			this.mvStore = mvStore;
 			this.resource = (TResource) resource;
