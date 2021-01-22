@@ -26,7 +26,6 @@ import edu.uoc.som.temf.TURI;
 import edu.uoc.som.temf.core.TResource;
 import edu.uoc.som.temf.testmodel.Node;
 import edu.uoc.som.temf.testmodel.TestmodelFactory;
-import edu.uoc.som.temf.testmodel.TestmodelPackage;
 import edu.uoc.som.temf.tests.util.TestUtils;
 import edu.uoc.som.temf.tests.util.TestUtils.PopulationInfo;
 
@@ -288,18 +287,18 @@ class TestTemf {
 		Node root = TestmodelFactory.eINSTANCE.createNode();
 		resource.getContents().add(root);
 		root.setName("Name 1");
-		Instant setPropInstant1Exact = root.whenSetName();
+		Instant setPropInstant1Exact = root.whenChangedName();
 		Instant setPropInstant1Approx = resource.getClock().instant();
 		root.setName("Name 2");
-		Instant setPropInstant2Exact = root.whenSetName();
+		Instant setPropInstant2Exact = root.whenChangedName();
 		Instant setPropInstant2Approx = resource.getClock().instant();
 		root.setName("Name 3");
-		Instant setPropInstant3Exact = root.whenSetName();
+		Instant setPropInstant3Exact = root.whenChangedName();
 		Instant setPropInstant3Approx = resource.getClock().instant();
 		
 		Node child1 = TestmodelFactory.eINSTANCE.createNode();
 		root.getChildren().add(child1);
-		Instant addChildInstant1Exact = root.whenSetChildren();
+		Instant addChildInstant1Exact = root.whenChangedName();
 
 		child1.setName("Name 1");
 		child1.setName("Name 2");
@@ -308,15 +307,15 @@ class TestTemf {
 		
 		Node child2 = TestmodelFactory.eINSTANCE.createNode();
 		root.getChildren().add(child2);
-		Instant addChildInstant2Exact = root.whenSetChildren();
+		Instant addChildInstant2Exact = root.whenChangedChildren();
 
 		child2.setName("Name 1");
 		child2.setName("Name 2");
 		child2.setName("Name 3");
-		child2.eUnset(TestmodelPackage.eINSTANCE.getNode_Name());
+		child2.unsetName();
 		
-		root.getChildren().clear();
-		Instant clearChildInstant3Exact = root.whenSetChildren();
+		root.unsetChildren();
+		Instant clearChildInstant3Exact = root.whenChangedChildren();
 		
 		assertEquals(3, root.getNameAllBetween(Instant.MIN, Instant.MAX).size(), "Check attached TObjects keep temporal information");
 		assertEquals("Name 1", root.getNameAt(setPropInstant1Exact), "Check 1st value in history");
