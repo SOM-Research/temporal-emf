@@ -217,7 +217,11 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	public boolean isSetAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
 		Object value = getFromDataMap(instant, tObject, feature).getValue();
-		return value != null && !(value instanceof Empty);
+		if (!feature.isMany()) {
+			return value != null && !(value instanceof Empty);
+		} else {
+			return value != null && ((Object[]) value).length > 0;
+		}
 	}
 
 	@Override

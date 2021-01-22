@@ -312,8 +312,8 @@ class TestTemf {
 		child2.setName("Name 1");
 		child2.setName("Name 2");
 		child2.setName("Name 3");
-		child2.unsetName();
 		
+		child2.unsetName();
 		root.unsetChildren();
 		Instant clearChildInstant3Exact = root.whenChangedChildren();
 		
@@ -329,7 +329,8 @@ class TestTemf {
 		assertEquals(2, root.getChildrenAt(addChildInstant2Exact).size(), "Check add child in history");
 		assertEquals(0, root.getChildrenAt(clearChildInstant3Exact).size(), "Check clear child in history");
 		
-		assertTrue(root.getChildren().isEmpty(), "Check many-valued reference is cleared");
+		assertFalse(root.isSetChildren(), "Check many-valued reference is unset");
+		assertTrue(root.getChildren().size() == 0, "Check unsetted many-valued references are not null (but an empty list)");
 		assertFalse(child2.isSetName(), "Check property unset");
 	}
 
