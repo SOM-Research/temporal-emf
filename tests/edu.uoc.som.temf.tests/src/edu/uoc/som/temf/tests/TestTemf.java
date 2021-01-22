@@ -30,6 +30,7 @@ import edu.uoc.som.temf.TURI;
 import edu.uoc.som.temf.core.TResource;
 import edu.uoc.som.temf.testmodel.Node;
 import edu.uoc.som.temf.testmodel.TestmodelFactory;
+import edu.uoc.som.temf.tests.util.TestUtils;
 import edu.uoc.som.temf.tstores.TStore;
 
 class TestTemf {

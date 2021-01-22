@@ -12,6 +12,8 @@ import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
 import org.junit.jupiter.api.Test;
 
+import edu.uoc.som.temf.tests.util.TestUtils;
+
 class TestMVStore {
 
 	static class MyKey implements Serializable {
