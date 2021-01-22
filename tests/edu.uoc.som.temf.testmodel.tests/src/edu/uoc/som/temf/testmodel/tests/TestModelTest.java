@@ -33,7 +33,7 @@ class TestModelTest {
 		EPackage ePackage = (EPackage) resource.getContents().get(0);
 		
 		// @formatter:off
-		assertAll("Check EPackage data on Test Model if right",
+		assertAll("Check EPackage data on Test Model is right",
 				() -> assertEquals(ePackage.getName(), TestmodelPackage.eNAME),
 				() -> assertEquals(ePackage.getNsPrefix(), TestmodelPackage.eNS_PREFIX),
 				() -> assertEquals(ePackage.getNsURI(), TestmodelPackage.eNS_URI),
