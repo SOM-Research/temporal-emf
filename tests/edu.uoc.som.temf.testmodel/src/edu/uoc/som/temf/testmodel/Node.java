@@ -61,6 +61,15 @@ public interface Node extends TObject {
 	void setName(String value);
 
 	/**
+	 * Unsets the value of the '{@link edu.uoc.som.temf.testmodel.Node#getName <em>Name</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isSetName()
+	 * @generated
+	 */
+	void unsetName();
+
+	/**
 	 * Returns the value of the '<em><b>Name</b></em>' attribute at the given instant.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -81,14 +90,14 @@ public interface Node extends TObject {
 	boolean isSetNameAt(Instant instant);
 
 	/**
-	 * Returns the instant when the value of the '{@link edu.uoc.som.temf.testmodel.Node#getName <em>Name</em>}' attribute was last modified.
+	 * Returns the instant when the value of the '{@link edu.uoc.som.temf.testmodel.Node#getName <em>Name</em>}' attribute was last changed.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return when the value of the '<em>Name</em>' attribute was last set.
+	 * @return when the value or the list of the '<em>Name</em>' attribute was last changed.
 	 * @see #isSetName()
 	 * @generated
 	 */
-	Instant whenSetName();
+	Instant whenChangedName();
 
 	/**
 	 * Returns the value of the '<em><b>Name</b></em>' attribute in the given time span.
@@ -113,6 +122,15 @@ public interface Node extends TObject {
 	EList<Node> getChildren();
 
 	/**
+	 * Unsets the value of the '{@link edu.uoc.som.temf.testmodel.Node#getChildren <em>Children</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isSetChildren()
+	 * @generated
+	 */
+	void unsetChildren();
+
+	/**
 	 * Returns the value of the '<em><b>Children</b></em>' containment reference list at the given instant.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -133,14 +151,14 @@ public interface Node extends TObject {
 	boolean isSetChildrenAt(Instant instant);
 
 	/**
-	 * Returns the instant when the value of the '{@link edu.uoc.som.temf.testmodel.Node#getChildren <em>Children</em>}' containment reference list was last modified.
+	 * Returns the instant when the value of the '{@link edu.uoc.som.temf.testmodel.Node#getChildren <em>Children</em>}' containment reference list was last changed.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return when the value of the '<em>Children</em>' containment reference list was last set.
+	 * @return when the value or the list of the '<em>Children</em>' containment reference list was last changed.
 	 * @see #isSetChildren()
 	 * @generated
 	 */
-	Instant whenSetChildren();
+	Instant whenChangedChildren();
 
 	/**
 	 * Returns the value of the '<em><b>Children</b></em>' containment reference list in the given time span.

@@ -10,10 +10,9 @@ Contributors:
 -%>
 <%if (isInterface) {%>
 	/**
-	 * Returns the instant when the value of the '{@link <%=genClass.getRawQualifiedInterfaceName()%>#<%=genFeature.getGetAccessor()%> <em><%=genFeature.getFormattedName()%></em>}' <%=genFeature.getFeatureKind()%> was last modified.
+	 * Unsets the value of the '{@link <%=genClass.getRawQualifiedInterfaceName()%>#<%=genFeature.getGetAccessor()%> <em><%=genFeature.getFormattedName()%></em>}' <%=genFeature.getFeatureKind()%>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return when the value of the '<em><%=genFeature.getFormattedName()%></em>' <%=genFeature.getFeatureKind()%> was last set.
 	 * @see #isSet<%=genFeature.getAccessorName()%>()
 	 * @generated
 	 */
@@ -31,16 +30,16 @@ Contributors:
 	@Deprecated
         <%}%>
 <%if (!isImplementation) {%>
-	<%=genModel.getImportedName("java.time.Instant")%> whenSet<%=genFeature.getAccessorName()%>();
+	void unset<%=genFeature.getAccessorName()%>();
 
 <%} else {%>
   <%if (useInterfaceOverrideAnnotation  && !genClass.isMapEntry() && !genFeature.isSuppressedIsSetVisibility()) {%>
 	@Override
   <%}%>
-	public <%=genModel.getImportedName("java.time.Instant")%> whenSet<%=genFeature.getAccessorName()%>()
+	public void unset<%=genFeature.getAccessorName()%>()
 	{
     <%if (genModel.isReflectiveDelegation()) {%>
-		return eWhenSet(<%=genFeature.getQualifiedFeatureAccessor()%>);
+		eUnset(<%=genFeature.getQualifiedFeatureAccessor()%>);
     <%} else {%>
 		throw new UnsupportedOperationException();
     <%}%>

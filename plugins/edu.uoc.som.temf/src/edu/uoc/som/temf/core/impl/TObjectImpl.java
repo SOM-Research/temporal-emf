@@ -235,7 +235,7 @@ public class TObjectImpl extends MinimalEStoreEObjectImpl implements InternalTOb
 	}
 	
 	@Override
-	public Instant eWhenSet(EStructuralFeature feature) {
+	public Instant eWhenChanged(EStructuralFeature feature) {
 		return eStore().whenSet(this, feature);
 	}
 	

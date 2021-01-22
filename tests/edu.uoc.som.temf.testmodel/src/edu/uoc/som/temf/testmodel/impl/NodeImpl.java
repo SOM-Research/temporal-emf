@@ -94,6 +94,16 @@ public class NodeImpl extends TObjectImpl implements Node {
 	 * @generated
 	 */
 	@Override
+	public void unsetName() {
+		eUnset(TestmodelPackage.Literals.NODE__NAME);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public String getNameAt(Instant instant) {
 		return (String)eGetAt(instant, TestmodelPackage.Literals.NODE__NAME);
 	}
@@ -114,8 +124,8 @@ public class NodeImpl extends TObjectImpl implements Node {
 	 * @generated
 	 */
 	@Override
-	public Instant whenSetName() {
-		return eWhenSet(TestmodelPackage.Literals.NODE__NAME);
+	public Instant whenChangedName() {
+		return eWhenChanged(TestmodelPackage.Literals.NODE__NAME);
 	}
 
 	/**
@@ -145,6 +155,16 @@ public class NodeImpl extends TObjectImpl implements Node {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
+	public void unsetChildren() {
+		eUnset(TestmodelPackage.Literals.NODE__CHILDREN);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public EList<Node> getChildrenAt(Instant instant) {
@@ -167,8 +187,8 @@ public class NodeImpl extends TObjectImpl implements Node {
 	 * @generated
 	 */
 	@Override
-	public Instant whenSetChildren() {
-		return eWhenSet(TestmodelPackage.Literals.NODE__CHILDREN);
+	public Instant whenChangedChildren() {
+		return eWhenChanged(TestmodelPackage.Literals.NODE__CHILDREN);
 	}
 
 	/**

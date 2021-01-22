@@ -31,7 +31,7 @@ public interface TObject extends EObject {
 
 	boolean eIsSetAt(Instant instant, EStructuralFeature feature);
 	
-	Instant eWhenSet(EStructuralFeature feature);
+	Instant eWhenChanged(EStructuralFeature feature);
 	
 	SortedMap<Instant, Object> eGetAllBetween(Instant start, Instant end, EStructuralFeature feature);
 
