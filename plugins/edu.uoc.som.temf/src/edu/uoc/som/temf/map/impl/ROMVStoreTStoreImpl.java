@@ -8,10 +8,10 @@ import org.h2.mvstore.MVStore;
 
 import edu.uoc.som.temf.core.TResource;
 
-public class ROMVStoreResourceTStoreImpl extends MVStoreResourceTStoreImpl {
+public class ROMVStoreTStoreImpl extends MVStoreTStoreImpl {
 
-	public ROMVStoreResourceTStoreImpl(TResource resource, MVStore mvStore) {
-		super(resource, mvStore);
+	public ROMVStoreTStoreImpl(MVStore mvStore, TResource resource) {
+		super(mvStore, resource);
 	}
 
 	@Override

@@ -28,7 +28,6 @@ import org.eclipse.emf.ecore.EPackage.Registry;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
-import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.h2.mvstore.Cursor;
 import org.h2.mvstore.MVMap;
@@ -40,13 +39,14 @@ import com.google.common.cache.LoadingCache;
 
 import edu.uoc.som.temf.Logger;
 import edu.uoc.som.temf.core.InternalTObject;
+import edu.uoc.som.temf.core.TGlobalClock;
 import edu.uoc.som.temf.core.TObject;
 import edu.uoc.som.temf.core.TResource;
 import edu.uoc.som.temf.core.exceptions.EClassNotFoundException;
 import edu.uoc.som.temf.core.impl.TObjectAdapterFactoryImpl;
-import edu.uoc.som.temf.tstores.SearcheableResourceTStore;
+import edu.uoc.som.temf.tstores.SearcheableTStore;
 
-public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
+public class MVStoreTStoreImpl implements SearcheableTStore {
 
 	protected static final String DATA = "data";
 	protected static final String INSTANCE_OF = "instanceOf";
@@ -62,7 +62,7 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 			EObject eObject = EcoreUtil.create(eClass);
 			InternalTObject tObject = TObjectAdapterFactoryImpl.getAdapter(eObject, InternalTObject.class);
 			tObject.tSetId(key);
-			tObject.tSetResource(getResource());
+			tObject.tSetResource(resource);
 			return tObject;
 		}
 	});
@@ -77,7 +77,11 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 
 	protected TResource resource;
 
-	public MVStoreResourceTStoreImpl(TResource resource, MVStore mvStore) {
+	public MVStoreTStoreImpl(MVStore mvStore) {
+		this(mvStore, null);
+	}
+	
+	public MVStoreTStoreImpl(MVStore mvStore, TResource resource) {
 		try {
 			this.mvStore = mvStore;
 			this.resource = (TResource) resource;
@@ -89,11 +93,6 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 			Logger.log(Logger.SEVERITY_ERROR, message);
 			throw new RuntimeException(message, e);
 		}
-	}
-
-	@Override
-	public Resource.Internal getResource() {
-		return resource;
 	}
 
 	@Override
@@ -575,7 +574,11 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	}
 
 	private Instant now() {
-		return resource.getClock().instant();
+		if (resource != null) {
+			return resource.getClock().instant();
+		} else {
+			return TGlobalClock.INSTANCE.instant();
+		}
 	}
 
 	private static class DataKey implements Serializable, Comparable<DataKey> {

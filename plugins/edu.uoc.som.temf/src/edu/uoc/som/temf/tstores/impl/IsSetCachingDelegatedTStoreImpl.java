@@ -17,7 +17,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
-import edu.uoc.som.temf.tstores.SearcheableResourceTStore;
+import edu.uoc.som.temf.tstores.SearcheableTStore;
 
 /**
  * A {@link SearcheableResourceEStore} wrapper that caches the size data
@@ -25,7 +25,7 @@ import edu.uoc.som.temf.tstores.SearcheableResourceTStore;
  * @author agomez
  * 
  */
-public class IsSetCachingDelegatedTStoreImpl extends DelegatedResourceTStoreImpl implements SearcheableResourceTStore {
+public class IsSetCachingDelegatedTStoreImpl extends DelegatedTStoreImpl implements SearcheableTStore {
 
 	protected class MapKey {
 		protected InternalEObject object;
@@ -79,11 +79,11 @@ public class IsSetCachingDelegatedTStoreImpl extends DelegatedResourceTStoreImpl
 	
 	protected LoadingCache<MapKey, Boolean> isSetCache;
 	
-	public IsSetCachingDelegatedTStoreImpl(SearcheableResourceTStore eStore) {
+	public IsSetCachingDelegatedTStoreImpl(SearcheableTStore eStore) {
 		this(eStore, DEFAULT_IS_SET_CACHE_SIZE);
 	}
 
-	public IsSetCachingDelegatedTStoreImpl(SearcheableResourceTStore eStore, int sizeCacheSize) {
+	public IsSetCachingDelegatedTStoreImpl(SearcheableTStore eStore, int sizeCacheSize) {
 		super(eStore);
 		this.isSetCache = CacheBuilder.newBuilder().maximumSize(sizeCacheSize).build(new CacheLoader<MapKey, Boolean>() {
 			@Override

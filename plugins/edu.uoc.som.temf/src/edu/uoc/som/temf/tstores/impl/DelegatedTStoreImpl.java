@@ -17,43 +17,36 @@ import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
-import org.eclipse.emf.ecore.resource.Resource;
 
-import edu.uoc.som.temf.tstores.SearcheableResourceTStore;
-
+import edu.uoc.som.temf.tstores.SearcheableTStore;
 
 /**
- * A {@link SearcheableResourceTStore} wrapper that delegates method calls to an
- * internal {@link SearcheableResourceTStore}
+ * A {@link SearcheableTStore} wrapper that delegates method calls to an
+ * internal {@link SearcheableTStore}
  * 
  * @author agomez
  * 
  */
-public class DelegatedResourceTStoreImpl implements SearcheableResourceTStore {
+public class DelegatedTStoreImpl implements SearcheableTStore {
 
 	/**
-	 * The wrapped {@link SearcheableResourceTStore}
+	 * The wrapped {@link SearcheableTStore}
 	 */
-	protected SearcheableResourceTStore tStore;
+	protected SearcheableTStore tStore;
 
-	public DelegatedResourceTStoreImpl(SearcheableResourceTStore eStore) {
+	public DelegatedTStoreImpl(SearcheableTStore eStore) {
 		this.tStore = eStore;
-	}
-
-	public Resource getResource() {
-		return tStore.getResource();
 	}
 
 	public EObject getEObject(String id) {
 		return tStore.getEObject(id);
 	}
-	
+
 	public Object getAt(Instant instant, InternalEObject object, EStructuralFeature feature, int index) {
 		return tStore.getAt(instant, object, feature, index);
 	}
 
-	public SortedMap<Instant, Object> getAllBetween(Instant startInstant, Instant endInstant, InternalEObject object,
-			EStructuralFeature feature, int index) {
+	public SortedMap<Instant, Object> getAllBetween(Instant startInstant, Instant endInstant, InternalEObject object, EStructuralFeature feature, int index) {
 		return tStore.getAllBetween(startInstant, endInstant, object, feature, index);
 	}
 
@@ -113,7 +106,7 @@ public class DelegatedResourceTStoreImpl implements SearcheableResourceTStore {
 	public boolean isSetAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		return tStore.isSetAt(instant, object, feature);
 	}
-	
+
 	@Override
 	public Instant whenSet(InternalEObject object, EStructuralFeature feature) {
 		return tStore.whenSet(object, feature);
@@ -166,12 +159,11 @@ public class DelegatedResourceTStoreImpl implements SearcheableResourceTStore {
 	public <T> T[] toArray(InternalEObject object, EStructuralFeature feature, T[] array) {
 		return tStore.toArray(object, feature, array);
 	}
-	
+
 	@Override
 	public SortedMap<Instant, Object[]> toArrayAllBetween(Instant startInstant, Instant endInstant, InternalEObject object, EStructuralFeature feature) {
 		return tStore.toArrayAllBetween(startInstant, endInstant, object, feature);
 	}
-
 
 	public int hashCode(InternalEObject object, EStructuralFeature feature) {
 		return tStore.hashCode(object, feature);
@@ -188,6 +180,5 @@ public class DelegatedResourceTStoreImpl implements SearcheableResourceTStore {
 	public EObject create(EClass eClass) {
 		return tStore.create(eClass);
 	}
-
 
 }

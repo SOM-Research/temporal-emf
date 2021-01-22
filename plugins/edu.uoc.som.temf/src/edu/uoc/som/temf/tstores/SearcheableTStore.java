@@ -11,24 +11,15 @@
 package edu.uoc.som.temf.tstores;
 
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.InternalEObject.EStore;
-import org.eclipse.emf.ecore.resource.Resource;
 
 /**
- * This interface extends the {@link TStore} interface and allows establishing a
- * mapping between {@link Resource}s and {@link TStore}s
+ * This interface extends the {@link TStore} interface and allows searching for
+ * an {@link EObject} in the underlying storage
  * 
  * @author agomez
  * 
  */
-public interface SearcheableResourceTStore extends TStore {
-
-	/**
-	 * Returns the {@link Resource} to which this {@link EStore} is associated
-	 * 
-	 * @return
-	 */
-	Resource getResource();
+public interface SearcheableTStore extends TStore {
 
 	/**
 	 * Returns the resolved {@link EObject} identified by the given <code>id</code>

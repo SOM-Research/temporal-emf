@@ -13,10 +13,8 @@ package edu.uoc.som.temf.core.impl;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.Serializable;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -49,11 +47,12 @@ import org.h2.mvstore.OffHeapStore;
 import edu.uoc.som.temf.Logger;
 import edu.uoc.som.temf.TURI;
 import edu.uoc.som.temf.core.InternalTObject;
+import edu.uoc.som.temf.core.TGlobalClock;
 import edu.uoc.som.temf.core.TObject;
 import edu.uoc.som.temf.core.TResource;
-import edu.uoc.som.temf.map.impl.MVStoreResourceTStoreImpl;
-import edu.uoc.som.temf.map.impl.ROMVStoreResourceTStoreImpl;
-import edu.uoc.som.temf.tstores.SearcheableResourceTStore;
+import edu.uoc.som.temf.map.impl.MVStoreTStoreImpl;
+import edu.uoc.som.temf.map.impl.ROMVStoreTStoreImpl;
+import edu.uoc.som.temf.tstores.SearcheableTStore;
 import edu.uoc.som.temf.tstores.TStore;
 import edu.uoc.som.temf.tstores.impl.IsSetCachingDelegatedTStoreImpl;
 import edu.uoc.som.temf.tstores.impl.SizeCachingDelegatedTStoreImpl;
@@ -64,11 +63,11 @@ public class TResourceImpl extends ResourceImpl implements TResource {
 
 	protected final DummyRootEObject DUMMY_ROOT_EOBJECT = new DummyRootEObject(this);
 
-	protected SearcheableResourceTStore tStore;
+	protected SearcheableTStore tStore;
 
 	protected MVStore mvStore;
 
-	protected Clock clock = new NonRepeatingClock(ZoneOffset.UTC);
+	protected Clock clock = TGlobalClock.INSTANCE;
 
 	public TResourceImpl(URI uri) {
 		this(uri, new MVStore.Builder().fileStore(new OffHeapStore()).open());
@@ -77,7 +76,7 @@ public class TResourceImpl extends ResourceImpl implements TResource {
 	private TResourceImpl(URI uri, MVStore mvStore) {
 		this.uri = uri;
 		this.mvStore = mvStore;
-		this.tStore = new MVStoreResourceTStoreImpl(this, mvStore);
+		this.tStore = new MVStoreTStoreImpl(mvStore, this);
 	}
 
 	@Override
@@ -194,7 +193,7 @@ public class TResourceImpl extends ResourceImpl implements TResource {
 	protected void shutdown() {
 		this.mvStore.close();
 		this.mvStore = new MVStore.Builder().fileStore(new OffHeapStore()).open();
-		this.tStore = new MVStoreResourceTStoreImpl(this, mvStore);
+		this.tStore = new MVStoreTStoreImpl(mvStore, this);
 	}
 
 	@Override
@@ -213,8 +212,8 @@ public class TResourceImpl extends ResourceImpl implements TResource {
 		unload();
 	}
 
-	protected SearcheableResourceTStore createResourceEStore(MVStore mvStore) throws IOException {
-		return new IsSetCachingDelegatedTStoreImpl(new SizeCachingDelegatedTStoreImpl(new MVStoreResourceTStoreImpl(this, mvStore)));
+	protected SearcheableTStore createResourceEStore(MVStore mvStore) throws IOException {
+		return new IsSetCachingDelegatedTStoreImpl(new SizeCachingDelegatedTStoreImpl(new MVStoreTStoreImpl(mvStore, this)));
 	}
 
 	protected File getFile() {
@@ -233,7 +232,7 @@ public class TResourceImpl extends ResourceImpl implements TResource {
 		private TResourceAtImpl(URI uri, MVStore mvStore, Instant instant) {
 			super(uri, mvStore);
 			this.clock = Clock.fixed(instant, ZoneOffset.UTC);
-			this.tStore = new ROMVStoreResourceTStoreImpl(TResourceAtImpl.this, mvStore);
+			this.tStore = new ROMVStoreTStoreImpl(mvStore, TResourceAtImpl.this);
 			isLoaded = true;
 		}
 
@@ -245,81 +244,6 @@ public class TResourceImpl extends ResourceImpl implements TResource {
 		@Override
 		public final void save(Map<?, ?> options) throws IOException {
 			throw new UnsupportedOperationException("Past TResources cannot vbe saved");
-		}
-	}
-
-	/**
-	 * Instant creation is key for identifying the moment when a
-	 * {@link EStructuralFeature} is set.
-	 * 
-	 * However, although {@link Instant}'s precision is in the order of nanoseconds,
-	 * it's accuracy is usually lower (even in the order of a few hundreds of
-	 * nanoseconds). That means that multiple instants created in a row may be
-	 * virtually the same {@link Instant}. To avoid duplicate keys in the map (and
-	 * thus missing values in the history), we increment the instant in 1 nanosecond
-	 * if the value is previous or the same than the last call to get an
-	 * {@link Instant}. 1 ns is the period of a frequency of 1GHz, so hopefully, the
-	 * number of subsequent calls to get {@link Instant}s will be low enough to
-	 * avoid a big error accumulation in nowadays processors.
-	 * 
-	 * @author agomez
-	 *
-	 */
-	static final class NonRepeatingClock extends Clock implements Serializable {
-		private static final long serialVersionUID = 1L;
-		private final Clock clock;
-		private Instant lastInstant = Instant.MIN;
-
-		NonRepeatingClock(ZoneId zone) {
-			this.clock = Clock.system(zone);
-		}
-
-		@Override
-		public ZoneId getZone() {
-			return clock.getZone();
-		}
-
-		@Override
-		public Clock withZone(ZoneId zone) {
-			if (zone.equals(getZone())) {
-				return this;
-			}
-			return new NonRepeatingClock(zone);
-		}
-
-		@Override
-		public long millis() {
-			return clock.millis();
-		}
-
-		@Override
-		public Instant instant() {
-			synchronized (lastInstant) {
-				Instant readInstant = clock.instant();
-				while (readInstant.isBefore(lastInstant) || readInstant.equals(lastInstant)) {
-					readInstant = readInstant.plusNanos(1);
-				}
-				lastInstant = readInstant;
-			}
-			return lastInstant;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (obj instanceof NonRepeatingClock) {
-				return clock.equals(((NonRepeatingClock) obj).clock);
-			}
-			return false;
-		}
-
-		@Override
-		public int hashCode() {
-			return clock.hashCode() + 1;
-		}
-
-		@Override
-		public String toString() {
-			return "NonRepeatingClock[" + clock.getZone() + "]";
 		}
 	}
 

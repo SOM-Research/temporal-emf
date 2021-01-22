@@ -18,11 +18,10 @@ import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
-import org.eclipse.emf.ecore.resource.Resource;
 
 import edu.uoc.som.temf.Logger;
 import edu.uoc.som.temf.TEmfPlugin;
-import edu.uoc.som.temf.tstores.SearcheableResourceTStore;
+import edu.uoc.som.temf.tstores.SearcheableTStore;
 
 /**
  * A {@link SearcheableResourceEStore} wrapper that logs every call to its
@@ -31,9 +30,9 @@ import edu.uoc.som.temf.tstores.SearcheableResourceTStore;
  * @author agomez
  * 
  */
-public class LoggingDelegatedResourceTStoreImpl extends DelegatedResourceTStoreImpl implements SearcheableResourceTStore {
+public class LoggingDelegatedTStoreImpl extends DelegatedTStoreImpl implements SearcheableTStore {
 
-	public LoggingDelegatedResourceTStoreImpl(SearcheableResourceTStore eStore) {
+	public LoggingDelegatedTStoreImpl(SearcheableTStore eStore) {
 		super(eStore);
 	}
 
@@ -222,12 +221,6 @@ public class LoggingDelegatedResourceTStoreImpl extends DelegatedResourceTStoreI
 	public EObject create(EClass eClass) {
 		Logger.log(Logger.SEVERITY_INFO, MessageFormat.format("Called create for {0}", eClass.getName()));
 		return super.create(eClass);
-	}
-
-	@Override
-	public Resource getResource() {
-		Logger.log(Logger.SEVERITY_INFO, "Called getResource");
-		return super.getResource();
 	}
 
 	@Override
