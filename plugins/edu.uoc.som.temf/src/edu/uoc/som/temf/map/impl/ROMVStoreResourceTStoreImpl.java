@@ -16,37 +16,37 @@ public class ROMVStoreResourceTStoreImpl extends MVStoreResourceTStoreImpl {
 
 	@Override
 	public Object set(InternalEObject object, EStructuralFeature feature, int index, Object value) {
-		throw new RuntimeException("TObjects in past TResources cannot be modified");
+		throw new UnsupportedOperationException("TObjects in past TResources cannot be modified");
 	}
 
 	@Override
 	public void add(InternalEObject object, EStructuralFeature feature, int index, Object value) {
-		throw new RuntimeException("TObjects in past TResources cannot be modified");
+		throw new UnsupportedOperationException("TObjects in past TResources cannot be modified");
 	}
 
 	@Override
 	public Object remove(InternalEObject object, EStructuralFeature feature, int index) {
-		throw new RuntimeException("TObjects in past TResources cannot be modified");
+		throw new UnsupportedOperationException("TObjects in past TResources cannot be modified");
 	}
 
 	@Override
 	public Object move(InternalEObject object, EStructuralFeature feature, int targetIndex, int sourceIndex) {
-		throw new RuntimeException("TObjects in past TResources cannot be modified");
+		throw new UnsupportedOperationException("TObjects in past TResources cannot be modified");
 	}
 
 	@Override
 	public void unset(InternalEObject object, EStructuralFeature feature) {
-		throw new RuntimeException("TObjects in past TResources cannot be modified");
+		throw new UnsupportedOperationException("TObjects in past TResources cannot be modified");
 	}
 
 	@Override
 	public void clear(InternalEObject object, EStructuralFeature feature) {
-		throw new RuntimeException("TObjects in past TResources cannot be modified");
+		throw new UnsupportedOperationException("TObjects in past TResources cannot be modified");
 	}
 
 	@Override
 	public EObject create(EClass eClass) {
-		throw new RuntimeException("TObjects in past TResources cannot be modified");
+		throw new UnsupportedOperationException("TObjects in past TResources cannot be modified");
 	}
 
 }
