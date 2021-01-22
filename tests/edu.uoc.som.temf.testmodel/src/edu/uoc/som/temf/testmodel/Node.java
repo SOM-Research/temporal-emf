@@ -43,9 +43,11 @@ public interface Node extends TObject {
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Name</em>' attribute.
+	 * @see #isSetName()
+	 * @see #unsetName()
 	 * @see #setName(String)
 	 * @see edu.uoc.som.temf.testmodel.TestmodelPackage#getNode_Name()
-	 * @model
+	 * @model unsettable="true"
 	 * @generated
 	 */
 	String getName();
@@ -55,6 +57,8 @@ public interface Node extends TObject {
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @param value the new value of the '<em>Name</em>' attribute.
+	 * @see #isSetName()
+	 * @see #unsetName()
 	 * @see #getName()
 	 * @generated
 	 */
@@ -65,9 +69,23 @@ public interface Node extends TObject {
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #isSetName()
+	 * @see #getName()
+	 * @see #setName(String)
 	 * @generated
 	 */
 	void unsetName();
+
+	/**
+	 * Returns whether the value of the '{@link edu.uoc.som.temf.testmodel.Node#getName <em>Name</em>}' attribute is set.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return whether the value of the '<em>Name</em>' attribute is set.
+	 * @see #unsetName()
+	 * @see #getName()
+	 * @see #setName(String)
+	 * @generated
+	 */
+	boolean isSetName();
 
 	/**
 	 * Returns the value of the '<em><b>Name</b></em>' attribute at the given instant.
@@ -115,8 +133,10 @@ public interface Node extends TObject {
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Children</em>' containment reference list.
+	 * @see #isSetChildren()
+	 * @see #unsetChildren()
 	 * @see edu.uoc.som.temf.testmodel.TestmodelPackage#getNode_Children()
-	 * @model containment="true"
+	 * @model containment="true" unsettable="true"
 	 * @generated
 	 */
 	EList<Node> getChildren();
@@ -126,9 +146,21 @@ public interface Node extends TObject {
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #isSetChildren()
+	 * @see #getChildren()
 	 * @generated
 	 */
 	void unsetChildren();
+
+	/**
+	 * Returns whether the value of the '{@link edu.uoc.som.temf.testmodel.Node#getChildren <em>Children</em>}' containment reference list is set.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return whether the value of the '<em>Children</em>' containment reference list is set.
+	 * @see #unsetChildren()
+	 * @see #getChildren()
+	 * @generated
+	 */
+	boolean isSetChildren();
 
 	/**
 	 * Returns the value of the '<em><b>Children</b></em>' containment reference list at the given instant.

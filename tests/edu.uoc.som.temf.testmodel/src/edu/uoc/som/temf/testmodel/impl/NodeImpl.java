@@ -104,6 +104,16 @@ public class NodeImpl extends TObjectImpl implements Node {
 	 * @generated
 	 */
 	@Override
+	public boolean isSetName() {
+		return eIsSet(TestmodelPackage.Literals.NODE__NAME);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public String getNameAt(Instant instant) {
 		return (String)eGetAt(instant, TestmodelPackage.Literals.NODE__NAME);
 	}
@@ -158,6 +168,16 @@ public class NodeImpl extends TObjectImpl implements Node {
 	@Override
 	public void unsetChildren() {
 		eUnset(TestmodelPackage.Literals.NODE__CHILDREN);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isSetChildren() {
+		return eIsSet(TestmodelPackage.Literals.NODE__CHILDREN);
 	}
 
 	/**

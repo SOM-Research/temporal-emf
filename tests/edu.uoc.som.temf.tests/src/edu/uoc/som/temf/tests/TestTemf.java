@@ -330,8 +330,7 @@ class TestTemf {
 		assertEquals(0, root.getChildrenAt(clearChildInstant3Exact).size(), "Check clear child in history");
 		
 		assertTrue(root.getChildren().isEmpty(), "Check many-valued reference is cleared");
-		
-		assertFalse(child2.isSetChildrenAt(Instant.MAX), "Check property unset");
+		assertFalse(child2.isSetName(), "Check property unset");
 	}
 
 
