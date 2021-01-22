@@ -298,7 +298,7 @@ class TestTemf {
 		
 		Node child1 = TestmodelFactory.eINSTANCE.createNode();
 		root.getChildren().add(child1);
-		Instant addChildInstant1Exact = root.whenChangedName();
+		Instant addChildInstant1Exact = root.whenChangedChildren();
 
 		child1.setName("Name 1");
 		child1.setName("Name 2");
