@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -21,10 +22,11 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
-import edu.uoc.som.temf.Logger;
 import edu.uoc.som.temf.TURI;
 import edu.uoc.som.temf.core.TResource;
 import edu.uoc.som.temf.testmodel.Node;
+import edu.uoc.som.temf.testmodel.TestmodelFactory;
+import edu.uoc.som.temf.testmodel.TestmodelPackage;
 import edu.uoc.som.temf.tests.util.TestUtils;
 import edu.uoc.som.temf.tests.util.TestUtils.PopulationInfo;
 
@@ -201,8 +203,7 @@ class TestTemf {
 
 	@Test
 	void testCountTResourceContentsAt() throws Exception {
-		File resourceFile = TestUtils.createNonExistingTempFile();
-		TResource resource = TestUtils.createTResource(resourceFile);
+		TResource resource = TestUtils.createTResource(TestUtils.createNonExistingTempFile());
 		resource.save(Collections.emptyMap());
 		List<PopulationInfo> populationInfo = TestUtils.populateResourceRandomly(resource);
 
@@ -222,8 +223,7 @@ class TestTemf {
 
 	@Test
 	void testCountTResourceAllContentsAt() throws Exception {
-		File resourceFile = TestUtils.createNonExistingTempFile();
-		TResource resource = TestUtils.createTResource(resourceFile);
+		TResource resource = TestUtils.createTResource(TestUtils.createNonExistingTempFile());
 		resource.save(Collections.emptyMap());
 		List<PopulationInfo> populationInfo = TestUtils.populateResourceRandomly(resource);
 		
@@ -243,17 +243,13 @@ class TestTemf {
 	
 	@Test
 	void testTResourceAt() throws Exception {
-		File resourceFile = TestUtils.createNonExistingTempFile();
-		TResource resource = TestUtils.createTResource(resourceFile);
+		TResource resource = TestUtils.createTResource(TestUtils.createNonExistingTempFile());
 		resource.save(Collections.emptyMap());
 		List<PopulationInfo> populationInfo = TestUtils.populateResourceRandomly(resource);
 
-		TestUtils.printResourceContents(resource);
-		
 		// Pick a position and an instant
 		int position = (int) (populationInfo.size() * 0.75);
 		Instant instant = populationInfo.get(position).instant;
-		Logger.log(Logger.SEVERITY_INFO, "TResource had " + (position + 1) + " elements at " + instant);
 
 		AtomicInteger count = new AtomicInteger();
 
@@ -274,6 +270,70 @@ class TestTemf {
 		assertEquals(position + 1, count.get(), "Check TResource has all the created elements using getContentsAt");
 	}
 
-	
+
+	@Test
+	void testDettachedTObjectModifications() throws Exception {
+		Node root = TestmodelFactory.eINSTANCE.createNode();
+		root.setName("Name 1");
+		root.setName("Name 2");
+		root.setName("Name 3");
+		assertThrows(UnsupportedOperationException.class, () -> root.getNameAt(Instant.MAX), "Check dettached TObjects don't getAt");
+		assertThrows(UnsupportedOperationException.class, () -> root.getNameAllBetween(Instant.MIN, Instant.MAX), "Check dettached TObjects don't getAllBetween");
+	}
+
+	@Test
+	void testAttachedTObjectModifications() throws Exception {
+		TResource resource = TestUtils.createTResource(TestUtils.createNonExistingTempFile());
+		
+		Node root = TestmodelFactory.eINSTANCE.createNode();
+		resource.getContents().add(root);
+		root.setName("Name 1");
+		Instant setPropInstant1Exact = root.whenSetName();
+		Instant setPropInstant1Approx = resource.getClock().instant();
+		root.setName("Name 2");
+		Instant setPropInstant2Exact = root.whenSetName();
+		Instant setPropInstant2Approx = resource.getClock().instant();
+		root.setName("Name 3");
+		Instant setPropInstant3Exact = root.whenSetName();
+		Instant setPropInstant3Approx = resource.getClock().instant();
+		
+		Node child1 = TestmodelFactory.eINSTANCE.createNode();
+		root.getChildren().add(child1);
+		Instant addChildInstant1Exact = root.whenSetChildren();
+
+		child1.setName("Name 1");
+		child1.setName("Name 2");
+		child1.setName("Name 3");
+		
+		
+		Node child2 = TestmodelFactory.eINSTANCE.createNode();
+		root.getChildren().add(child2);
+		Instant addChildInstant2Exact = root.whenSetChildren();
+
+		child2.setName("Name 1");
+		child2.setName("Name 2");
+		child2.setName("Name 3");
+		child2.eUnset(TestmodelPackage.eINSTANCE.getNode_Name());
+		
+		root.getChildren().clear();
+		Instant clearChildInstant3Exact = root.whenSetChildren();
+		
+		assertEquals(3, root.getNameAllBetween(Instant.MIN, Instant.MAX).size(), "Check attached TObjects keep temporal information");
+		assertEquals("Name 1", root.getNameAt(setPropInstant1Exact), "Check 1st value in history");
+		assertEquals("Name 1", root.getNameAt(setPropInstant1Approx), "Check 1st value in history");
+		assertEquals("Name 2", root.getNameAt(setPropInstant2Exact), "Check 2nd value in history");
+		assertEquals("Name 2", root.getNameAt(setPropInstant2Approx), "Check 2nd value in history");
+		assertEquals("Name 3", root.getNameAt(setPropInstant3Exact), "Check 3rd value in history");
+		assertEquals("Name 3", root.getNameAt(setPropInstant3Approx), "Check 3rd value in history");
+		
+		assertEquals(1, root.getChildrenAt(addChildInstant1Exact).size(), "Check add child in history");
+		assertEquals(2, root.getChildrenAt(addChildInstant2Exact).size(), "Check add child in history");
+		assertEquals(0, root.getChildrenAt(clearChildInstant3Exact).size(), "Check clear child in history");
+		
+		assertTrue(root.getChildren().isEmpty(), "Check many-valued reference is cleared");
+		
+		assertFalse(child2.isSetChildrenAt(Instant.MAX), "Check property unset");
+	}
+
 
 }

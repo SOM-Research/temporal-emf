@@ -114,7 +114,7 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	}
 
 	protected Object getAt(Instant instant, TObject object, EAttribute eAttribute, int index) {
-		Object value = getFromDataMap(instant, object, eAttribute);
+		Object value = getFromDataMap(instant, object, eAttribute).getValue();
 		if (!eAttribute.isMany()) {
 			return parseMapValue(eAttribute, (String) value);
 		} else {
@@ -124,7 +124,7 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	}
 
 	protected Object getAt(Instant instant, TObject object, EReference eReference, int index) {
-		Object value = getFromDataMap(instant, object, eReference);
+		Object value = getFromDataMap(instant, object, eReference).getValue();
 		if (!eReference.isMany()) {
 			return getEObject((String) value);
 		} else {
@@ -147,22 +147,22 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 
 	protected SortedMap<Instant, Object> getAllBetween(Instant startInstant, Instant endInstant, TObject object, EAttribute eAttribute, int index) {
 		SortedMap<Instant, Object> result = new TreeMap<>();
-		TreeMap<DataKey, Object> all = getAllFromDataMap(startInstant, endInstant, object, eAttribute);
+		TreeMap<Instant, Object> all = getAllFromDataMap(startInstant, endInstant, object, eAttribute);
 		if (!eAttribute.isMany()) {
-			all.forEach((key, obj) -> result.put(key.instant, parseMapValue(eAttribute, (String) obj)));
+			all.forEach((key, obj) -> result.put(key, parseMapValue(eAttribute, obj)));
 		} else {
-			all.forEach((key, obj) -> result.put(key.instant, parseMapValue(eAttribute, parseMapValue(eAttribute, ((Object[]) obj)[index]))));
+			all.forEach((key, obj) -> result.put(key, parseMapValue(eAttribute, parseMapValue(eAttribute, ((Object[]) obj)[index]))));
 		}
 		return result;
 	}
 
 	protected SortedMap<Instant, Object> getAllBetween(Instant startInstant, Instant endInstant, TObject object, EReference eReference, int index) {
 		SortedMap<Instant, Object> result = new TreeMap<>();
-		TreeMap<DataKey, Object> all = getAllFromDataMap(startInstant, endInstant, object, eReference);
+		TreeMap<Instant, Object> all = getAllFromDataMap(startInstant, endInstant, object, eReference);
 		if (!eReference.isMany()) {
-			all.forEach((key, obj) -> result.put(key.instant, getEObject((String) obj)));
+			all.forEach((key, obj) -> result.put(key, getEObject((String) obj)));
 		} else {
-			all.forEach((key, obj) -> result.put(key.instant, getEObject((String) ((Object[]) obj)[index])));
+			all.forEach((key, obj) -> result.put(key, getEObject((String) ((Object[]) obj)[index])));
 		}
 		return result;
 	}
@@ -185,7 +185,7 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 			Object oldValue = dataMap.put(DataKey.from(object.tId(), eAttribute.getName(), now()), serializeToMapValue(eAttribute, value));
 			return parseMapValue(eAttribute, oldValue);
 		} else {
-			Object[] array = (Object[]) getFromDataMap(object, eAttribute);
+			Object[] array = (Object[]) getFromDataMap(object, eAttribute).getValue();
 			Object oldValue = array[index];
 			array[index] = serializeToMapValue(eAttribute, value);
 			dataMap.put(DataKey.from(object.tId(), eAttribute.getName(), now()), array);
@@ -200,7 +200,7 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 			Object oldId = dataMap.put(DataKey.from(object.tId(), eReference.getName(), now()), referencedObject.tId());
 			return oldId != null ? getEObject((String) oldId) : null;
 		} else {
-			Object[] array = (Object[]) getFromDataMap(object, eReference);
+			Object[] array = (Object[]) getFromDataMap(object, eReference).getValue();
 			Object oldId = array[index];
 			array[index] = referencedObject.tId();
 			dataMap.put(DataKey.from(object.tId(), eReference.getName(), now()), array);
@@ -216,13 +216,14 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	@Override
 	public boolean isSetAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		return getFromDataMap(instant, tObject, feature) != null;
+		Object value = getFromDataMap(instant, tObject, feature).getValue();
+		return value != null && !(value instanceof Empty);
 	}
-	
+
 	@Override
 	public Instant whenSet(InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		return getFromDataMap(now(), tObject, feature).getKey().instant;
+		return getFromDataMap(now(), tObject, feature).getKey();
 	}
 
 	@Override
@@ -239,7 +240,7 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	}
 
 	protected void add(TObject object, EAttribute eAttribute, int index, Object value) {
-		Object[] array = (Object[]) getFromDataMap(object, eAttribute);
+		Object[] array = (Object[]) getFromDataMap(object, eAttribute).getValue();
 		if (array == null) {
 			array = new Object[] {};
 		}
@@ -250,7 +251,7 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	protected void add(TObject object, EReference eReference, int index, TObject referencedObject) {
 		updateContainment(object, eReference, referencedObject);
 		updateInstanceOf(referencedObject);
-		Object[] array = (Object[]) getFromDataMap(object, eReference);
+		Object[] array = (Object[]) getFromDataMap(object, eReference).getValue();
 		if (array == null) {
 			array = new Object[] {};
 		}
@@ -271,7 +272,7 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	}
 
 	protected Object remove(TObject object, EAttribute eAttribute, int index) {
-		Object[] array = (Object[]) getFromDataMap(object, eAttribute);
+		Object[] array = (Object[]) getFromDataMap(object, eAttribute).getValue();
 		Object oldValue = array[index];
 		array = ArrayUtils.remove(array, index);
 		dataMap.put(DataKey.from(object.tId(), eAttribute.getName(), now()), array);
@@ -279,7 +280,7 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	}
 
 	protected Object remove(TObject object, EReference eReference, int index) {
-		Object[] array = (Object[]) getFromDataMap(object, eReference);
+		Object[] array = (Object[]) getFromDataMap(object, eReference).getValue();
 		Object oldId = array[index];
 		array = ArrayUtils.remove(array, index);
 		dataMap.put(DataKey.from(object.tId(), eReference.getName(), now()), array);
@@ -297,7 +298,7 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	@Override
 	public void unset(InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		dataMap.put(DataKey.from(tObject.tId(), feature.getName(), now()), null);
+		dataMap.put(DataKey.from(tObject.tId(), feature.getName(), now()), Empty.INSTANCE);
 	}
 
 	@Override
@@ -419,13 +420,13 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
 
 		SortedMap<Instant, Object[]> result = new TreeMap<>();
-		TreeMap<DataKey, Object> all = getAllFromDataMap(startInstant, endInstant, tObject, feature);
+		TreeMap<Instant, Object> all = getAllFromDataMap(startInstant, endInstant, tObject, feature);
 
 		if (feature instanceof EAttribute) {
-			all.forEach((key, obj) -> result.put(key.instant,
-					Arrays.asList((Object[]) obj).stream().map(v -> parseMapValue((EAttribute) feature, (String) v)).toArray()));
+			all.forEach(
+					(key, obj) -> result.put(key, Arrays.asList((Object[]) obj).stream().map(v -> parseMapValue((EAttribute) feature, (String) v)).toArray()));
 		} else if (feature instanceof EReference) {
-			all.forEach((key, obj) -> result.put(key.instant, Arrays.asList((Object[]) obj).stream().map(v -> getEObject((String) v)).toArray()));
+			all.forEach((key, obj) -> result.put(key, Arrays.asList((Object[]) obj).stream().map(v -> getEObject((String) v)).toArray()));
 		} else {
 			throw new IllegalArgumentException(feature.toString());
 		}
@@ -522,14 +523,16 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 		return value != null ? EcoreUtil.convertToString(eAttribute.getEAttributeType(), value) : null;
 	}
 
-	protected Object getFromDataMap(TObject object, EStructuralFeature feature) {
+	protected Entry<Instant, Object> getFromDataMap(TObject object, EStructuralFeature feature) {
 		return getFromDataMap(now(), object, feature);
 	}
 
+	// TODO: Fix javadoc below
 	/**
-	 * Gets the latest value for {@link EStructuralFeature} {@code feature} from the
-	 * data map for the {@link TObject} {@code object} before
-	 * <code>endInstant</code>.
+	 * 
+	 * Gets the latest {@link Entry} with {@link DataKey} and value for the
+	 * {@link EStructuralFeature} {@code feature} from the data map for the
+	 * {@link TObject} {@code object} before <code>endInstant</code>.
 	 * 
 	 * @param endInstant the end instant or <code>null</null> to indicate the latest
 	 *                   possible time.
@@ -539,24 +542,27 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	 *         single-valued {@link EStructuralFeature}s or a {@link String}[] for
 	 *         many-valued {@link EStructuralFeature}s
 	 */
-	protected Entry<DataKey, Object> getFromDataMap(Instant endInstant, TObject object, EStructuralFeature feature) {
+	protected Entry<Instant, Object> getFromDataMap(Instant endInstant, TObject object, EStructuralFeature feature) {
 		DataKey floorKey = dataMap.floorKey(DataKey.from(object.tId(), feature.getName(), endInstant));
 		if (floorKey != null && object.tId().equals(floorKey.id) && feature.getName().equals(floorKey.feature)) {
-			return new SimpleEntry<DataKey, Object>(floorKey, dataMap.get(floorKey));
+			return new SimpleEntry<Instant, Object>(floorKey.instant, dataMap.get(floorKey));
 		} else {
-			return null;
+			return new SimpleEntry<Instant, Object>(null, null);
 		}
 	}
 
-	protected TreeMap<DataKey, Object> getAllFromDataMap(Instant startInstant, Instant endInstant, TObject object, EStructuralFeature feature) {
-		TreeMap<DataKey, Object> result = new TreeMap<>();
+	protected TreeMap<Instant, Object> getAllFromDataMap(Instant startInstant, Instant endInstant, TObject object, EStructuralFeature feature) {
+		TreeMap<Instant, Object> result = new TreeMap<>();
 		DataKey firstKey = dataMap.ceilingKey(DataKey.from(object.tId(), feature.getName(), startInstant));
-		DataKey lastKey = dataMap.floorKey(DataKey.from(object.tId(), feature.getName(), startInstant));
+		DataKey lastKey = dataMap.floorKey(DataKey.from(object.tId(), feature.getName(), endInstant));
 		Cursor<DataKey, Object> c = dataMap.cursor(firstKey);
-		while (!c.getKey().equals(lastKey)) {
-			result.put(c.getKey(), c.getValue());
+		while (c.hasNext()) {
 			c.next();
-		};
+			result.put(c.getKey().instant, c.getValue());
+			if (c.getKey().equals(lastKey)) {
+				break;
+			}
+		}
 		return result;
 	}
 
@@ -564,7 +570,7 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 		return resource.getClock().instant();
 	}
 
-	private static class DataKey implements Serializable {
+	private static class DataKey implements Serializable, Comparable<DataKey> {
 
 		private static final long serialVersionUID = 1L;
 
@@ -580,6 +586,20 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 
 		public static DataKey from(String id, String feature, Instant instant) {
 			return new DataKey(id, feature, instant);
+		}
+
+		@Override
+		public int compareTo(DataKey o) {
+			int result;
+			result = id.compareTo(o.id);
+			if (result != 0) {
+				return result;
+			}
+			result = feature.compareTo(o.feature);
+			if (result != 0) {
+				return result;
+			}
+			return instant.compareTo(o.instant);
 		}
 
 		@Override
@@ -618,7 +638,6 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 				return false;
 			return true;
 		}
-
 	}
 
 	private static class ContainerKey implements Serializable {
@@ -704,5 +723,12 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 		public static EClassInfo from(String nsURI, String className) {
 			return new EClassInfo(nsURI, className);
 		}
+	}
+	
+	private static class Empty implements Serializable {
+		
+		private static final long serialVersionUID = 1L;
+		
+		public static final Empty INSTANCE = new Empty();
 	}
 }
