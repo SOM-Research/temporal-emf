@@ -298,7 +298,11 @@ public class MVStoreResourceTStoreImpl implements SearcheableResourceTStore {
 	@Override
 	public void unset(InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		dataMap.put(DataKey.from(tObject.tId(), feature.getName(), now()), Empty.INSTANCE);
+		if (feature.isMany()) {
+			dataMap.put(DataKey.from(tObject.tId(), feature.getName(), now()), new Object[] {});
+		} else {
+			dataMap.put(DataKey.from(tObject.tId(), feature.getName(), now()), Empty.INSTANCE);
+		}
 	}
 
 	@Override
