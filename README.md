@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/131026607.svg)](https://zenodo.org/badge/latestdoi/131026607)
+
 # The *TemporalEMF* metamodeling framework
 
 *TemporalEMF* is a temporal metamodeling framework that adds native temporal support for models.
