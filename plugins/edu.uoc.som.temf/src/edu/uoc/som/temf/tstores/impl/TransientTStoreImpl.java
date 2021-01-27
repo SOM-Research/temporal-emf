@@ -11,19 +11,22 @@
 package edu.uoc.som.temf.tstores.impl;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NavigableMap;
 import java.util.SortedMap;
+import java.util.TreeMap;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.InternalEObject.EStore;
 
+import edu.uoc.som.temf.core.TGlobalClock;
 import edu.uoc.som.temf.tstores.TStore;
 
 /**
@@ -35,8 +38,8 @@ import edu.uoc.som.temf.tstores.TStore;
  */
 public class TransientTStoreImpl implements TStore {
 
-	protected Map<EStoreEntryKey, Object> singleMap = new HashMap<EStoreEntryKey, Object>();
-	protected Map<EStoreEntryKey, List<Object>> manyMap = new HashMap<EStoreEntryKey, List<Object>>();
+	protected Map<EStoreEntryKey, NavigableMap<Instant, Object>> singleMap = new HashMap<>();
+	protected Map<EStoreEntryKey, NavigableMap<Instant, Object[]>> manyMap = new HashMap<>();
 
 	public class EStoreEntryKey {
 
@@ -99,14 +102,11 @@ public class TransientTStoreImpl implements TStore {
 	public Object get(InternalEObject eObject, EStructuralFeature feature, int index) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
 		if (index == NO_INDEX) {
-			return singleMap.get(entry);
+			Entry<Instant, Object> lastEntry = singleMap.getOrDefault(entry, new TreeMap<>()).lastEntry();
+			return lastEntry != null ? lastEntry.getValue() : null;
 		} else {
-			List<Object> saved = manyMap.get(entry);
-			if (saved != null) {
-				return saved.get(index);
-			} else {
-				return null;
-			}
+			Entry<Instant, Object[]> lastEntry = manyMap.getOrDefault(entry, new TreeMap<>()).lastEntry();
+			return lastEntry != null ? lastEntry.getValue()[index] :  null;
 		}
 	}
 
@@ -124,56 +124,66 @@ public class TransientTStoreImpl implements TStore {
 	public Object set(InternalEObject eObject, EStructuralFeature feature, int index, Object value) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
 		if (index == NO_INDEX) {
-			return singleMap.put(entry, value);
+			singleMap.putIfAbsent(entry, new TreeMap<>());
+			return singleMap.get(entry).put(TGlobalClock.INSTANCE.instant(), value);
 		} else {
-			return manyMap.get(entry).set(index, value);
+			Object[] newValues = manyMap.get(entry).lastEntry().getValue().clone();
+			newValues[index] = value;
+			return manyMap.get(entry).put(TGlobalClock.INSTANCE.instant(), newValues);
 		}
 	}
 
 	@Override
 	public void add(InternalEObject eObject, EStructuralFeature feature, int index, Object value) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
-		List<Object> saved = manyMap.get(entry);
+		manyMap.putIfAbsent(entry, new TreeMap<>());
+		NavigableMap<Instant, Object[]> saved = manyMap.get(entry);
 		if (saved != null) {
-			saved.add(index, value);
+			Object[] values = saved.lastEntry().getValue();
+			saved.put(TGlobalClock.INSTANCE.instant(), ArrayUtils.add(values, value));
 		} else {
-			List<Object> list = new ArrayList<Object>();
-			list.add(value);
-			manyMap.put(entry, list);
+			Object[] values = new Object[] { value };
+			NavigableMap<Instant, Object[]> map = new TreeMap<>();
+			map.put(TGlobalClock.INSTANCE.instant(), values);
+			manyMap.put(entry, map);
 		}
 	}
 
 	@Override
 	public Object remove(InternalEObject eObject, EStructuralFeature feature, int index) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
-		return manyMap.get(entry).remove(index);
+		Object[] values = manyMap.get(entry).lastEntry().getValue();
+		Object value = values[index];
+		manyMap.get(entry).put(TGlobalClock.INSTANCE.instant(), ArrayUtils.remove(values, index));
+		return value;
 	}
 
 	@Override
 	public Object move(InternalEObject eObject, EStructuralFeature feature, int targetIndex, int sourceIndex) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
-		List<Object> list = manyMap.get(entry);
-		Object movedObject = list.remove(sourceIndex);
-		list.add(targetIndex, movedObject);
-		return movedObject;
+		Object[] values = manyMap.get(entry).lastEntry().getValue();
+		Object value = values[sourceIndex];
+		values = ArrayUtils.remove(values, sourceIndex);
+		manyMap.get(entry).put(TGlobalClock.INSTANCE.instant(), ArrayUtils.add(values, targetIndex, value));
+		return value;
 	}
 
 	@Override
 	public void clear(InternalEObject eObject, EStructuralFeature feature) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
-		List<Object> list = manyMap.get(entry);
-		if (list != null) {
-			list.clear();
-		}
+		manyMap.putIfAbsent(entry, new TreeMap<>());
+		manyMap.get(entry).put(TGlobalClock.INSTANCE.instant(), new Object[] {});
 	}
 
 	@Override
 	public boolean isSet(InternalEObject eObject, EStructuralFeature feature) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
 		if (!feature.isMany()) {
-			return singleMap.containsKey(entry);
+			Entry<Instant, Object> lastEntry = singleMap.getOrDefault(entry, new TreeMap<>()).lastEntry();
+			return lastEntry != null ? lastEntry.getValue() != null : false;
 		} else {
-			return manyMap.containsKey(entry);
+			Entry<Instant, Object[]> lastEntry = manyMap.getOrDefault(entry, new TreeMap<>()).lastEntry();
+			return lastEntry != null ? lastEntry.getValue() != null && ((Object[]) lastEntry.getValue()).length > 0 : false;
 		}
 	}
 
@@ -191,17 +201,19 @@ public class TransientTStoreImpl implements TStore {
 	public void unset(InternalEObject eObject, EStructuralFeature feature) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
 		if (!feature.isMany()) {
-			singleMap.remove(entry);
+			singleMap.putIfAbsent(entry, new TreeMap<>());
+			singleMap.get(entry).put(TGlobalClock.INSTANCE.instant(), null);
 		} else {
-			manyMap.remove(entry);
+			manyMap.putIfAbsent(entry, new TreeMap<>());
+			manyMap.get(entry).put(TGlobalClock.INSTANCE.instant(), new Object[] {});
 		}
 	}
 
 	@Override
 	public int size(InternalEObject eObject, EStructuralFeature feature) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
-		List<Object> list = manyMap.get(entry);
-		return list != null ? list.size() : 0;
+		NavigableMap<Instant, Object[]> values = manyMap.getOrDefault(entry, new TreeMap<>());
+		return values.lastEntry() != null ? values.lastEntry().getValue().length : 0;
 	}
 
 	@Override
@@ -212,8 +224,8 @@ public class TransientTStoreImpl implements TStore {
 	@Override
 	public int indexOf(InternalEObject eObject, EStructuralFeature feature, Object value) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
-		List<Object> list = manyMap.get(entry);
-		return list != null ? list.indexOf(value) : -1;
+		NavigableMap<Instant, Object[]> values = manyMap.getOrDefault(entry, new TreeMap<>());
+		return values.lastEntry() != null ? ArrayUtils.indexOf(values.lastEntry().getValue(), value) : -1;
 	}
 
 	@Override
@@ -224,8 +236,8 @@ public class TransientTStoreImpl implements TStore {
 	@Override
 	public int lastIndexOf(InternalEObject eObject, EStructuralFeature feature, Object value) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
-		List<Object> list = manyMap.get(entry);
-		return list != null ? list.lastIndexOf(value) : -1;
+		NavigableMap<Instant, Object[]> values = manyMap.getOrDefault(entry, new TreeMap<>());
+		return values.lastEntry() != null ? ArrayUtils.lastIndexOf(values.lastEntry().getValue(), value) : -1;
 	}
 
 	@Override
@@ -236,8 +248,8 @@ public class TransientTStoreImpl implements TStore {
 	@Override
 	public Object[] toArray(InternalEObject eObject, EStructuralFeature feature) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
-		List<Object> list = manyMap.get(entry);
-		return list != null ? list.toArray() : new Object[] {};
+		NavigableMap<Instant, Object[]> values = manyMap.getOrDefault(entry, new TreeMap<>());
+		return values.lastEntry() != null ? values.lastEntry().getValue().clone() : new Object[] {};
 	}
 
 	@Override
@@ -253,8 +265,17 @@ public class TransientTStoreImpl implements TStore {
 	@Override
 	public <T> T[] toArray(InternalEObject eObject, EStructuralFeature feature, T[] array) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
-		List<Object> list = manyMap.get(entry);
-		return list != null ? list.toArray(array) : Arrays.copyOf(array, 0);
+		NavigableMap<Instant, Object[]> values = manyMap.getOrDefault(entry, new TreeMap<>());
+		if (values.lastEntry() != null) {
+			Object[] savedArray = values.lastEntry().getValue();
+			if (array.length < savedArray.length) {
+				array = Arrays.copyOf(array, savedArray.length);
+			}
+			System.arraycopy(savedArray, 0, array, 0, savedArray.length);
+			return array;
+		} else {
+			return Arrays.copyOf(array, 0);
+		}
 	}
 
 	@Override
@@ -265,8 +286,8 @@ public class TransientTStoreImpl implements TStore {
 	@Override
 	public boolean isEmpty(InternalEObject eObject, EStructuralFeature feature) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
-		List<Object> list = manyMap.get(entry);
-		return list != null ? list.isEmpty() : true;
+		NavigableMap<Instant, Object[]> values = manyMap.getOrDefault(entry, new TreeMap<>());
+		return values.lastEntry() != null && values.lastEntry().getValue() != null ? values.lastEntry().getValue().length > 0 : true;
 	}
 
 	@Override
@@ -277,8 +298,8 @@ public class TransientTStoreImpl implements TStore {
 	@Override
 	public boolean contains(InternalEObject eObject, EStructuralFeature feature, Object value) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
-		List<Object> list = manyMap.get(entry);
-		return list != null ? list.contains(value) : false;
+		NavigableMap<Instant, Object[]> values = manyMap.getOrDefault(entry, new TreeMap<>());
+		return values.lastEntry() != null && values.lastEntry().getValue() != null ? ArrayUtils.contains(values.lastEntry().getValue(), value) : false;
 	}
 
 	@Override
@@ -289,7 +310,7 @@ public class TransientTStoreImpl implements TStore {
 	@Override
 	public int hashCode(InternalEObject eObject, EStructuralFeature feature) {
 		EStoreEntryKey entry = new EStoreEntryKey(eObject, feature);
-		return manyMap.get(entry).hashCode();
+		return manyMap.getOrDefault(entry, new TreeMap<>()).lastEntry().hashCode();
 	}
 
 	@Override
