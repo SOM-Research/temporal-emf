@@ -34,7 +34,7 @@ import edu.uoc.som.temf.core.InternalTObject;
 import edu.uoc.som.temf.core.TObject;
 import edu.uoc.som.temf.core.TResource;
 import edu.uoc.som.temf.tstores.TStore;
-import edu.uoc.som.temf.tstores.impl.OwnedTransientTStoreImpl;
+import edu.uoc.som.temf.tstores.impl.TransientTStoreImpl;
 
 public class TObjectImpl extends MinimalEStoreEObjectImpl implements InternalTObject {
 
@@ -159,7 +159,7 @@ public class TObjectImpl extends MinimalEStoreEObjectImpl implements InternalTOb
 		if (resource instanceof TResource) {
 			eStore = ((TResource) resource).tStore();
 		} else {
-			eStore = new OwnedTransientTStoreImpl(this);
+			eStore = new TransientTStoreImpl();
 		}
 		// Move contents from oldStore to eStore
 		if (oldStore != null && eStore != null && eStore != oldStore) {
@@ -184,7 +184,7 @@ public class TObjectImpl extends MinimalEStoreEObjectImpl implements InternalTOb
 	@Override
 	public TStore eStore() {
 		if (eStore == null) {
-			eStore = new OwnedTransientTStoreImpl(this);
+			eStore = new TransientTStoreImpl();
 		}
 		return eStore;
 	}
