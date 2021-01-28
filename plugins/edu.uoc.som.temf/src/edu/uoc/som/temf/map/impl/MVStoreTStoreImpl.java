@@ -81,7 +81,7 @@ public class MVStoreTStoreImpl implements SearcheableTStore {
 	public MVStoreTStoreImpl(MVStore mvStore) {
 		this(mvStore, null);
 	}
-	
+
 	public MVStoreTStoreImpl(MVStore mvStore, TResource resource) {
 		try {
 			this.mvStore = mvStore;
@@ -115,7 +115,9 @@ public class MVStoreTStoreImpl implements SearcheableTStore {
 
 	protected Object getAt(Instant instant, TObject object, EAttribute eAttribute, int index) {
 		Object value = getFromDataMap(instant, object, eAttribute).getValue();
-		if (!eAttribute.isMany()) {
+		if (value instanceof Empty) {
+			return null;
+		} else if (!eAttribute.isMany()) {
 			return parseMapValue(eAttribute, (String) value);
 		} else {
 			Object[] array = (Object[]) value;
@@ -185,7 +187,7 @@ public class MVStoreTStoreImpl implements SearcheableTStore {
 			Object oldValue = dataMap.put(DataKey.from(object.tId(), eAttribute.getName(), now()), serializeToMapValue(eAttribute, value));
 			return parseMapValue(eAttribute, oldValue);
 		} else {
-			Object[] array = (Object[]) getFromDataMap(object, eAttribute).getValue();
+			Object[] array = ArrayUtils.clone((Object[]) getFromDataMap(object, eAttribute).getValue());
 			Object oldValue = array[index];
 			array[index] = serializeToMapValue(eAttribute, value);
 			dataMap.put(DataKey.from(object.tId(), eAttribute.getName(), now()), array);
@@ -196,15 +198,21 @@ public class MVStoreTStoreImpl implements SearcheableTStore {
 	protected Object set(TObject object, EReference eReference, int index, TObject referencedObject) {
 		updateContainment(object, eReference, referencedObject);
 		updateInstanceOf(referencedObject);
+		Object oldId;
 		if (!eReference.isMany()) {
-			Object oldId = dataMap.put(DataKey.from(object.tId(), eReference.getName(), now()), referencedObject.tId());
-			return oldId != null ? getEObject((String) oldId) : null;
+			oldId = dataMap.put(DataKey.from(object.tId(), eReference.getName(), now()), referencedObject.tId());
 		} else {
-			Object[] array = (Object[]) getFromDataMap(object, eReference).getValue();
-			Object oldId = array[index];
+			Object[] array = ArrayUtils.clone((Object[]) getFromDataMap(object, eReference).getValue());
+			oldId = array[index];
 			array[index] = referencedObject.tId();
 			dataMap.put(DataKey.from(object.tId(), eReference.getName(), now()), array);
-			return oldId != null ? getEObject((String) oldId) : null;
+		}
+		if (oldId != null) {
+			TObject result = (TObject) getEObject((String) oldId);
+			updateContainment(null, eReference, result);
+			return result;
+		} else {
+			return null;
 		}
 	}
 
@@ -217,8 +225,10 @@ public class MVStoreTStoreImpl implements SearcheableTStore {
 	public boolean isSetAt(Instant instant, InternalEObject object, EStructuralFeature feature) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
 		Object value = getFromDataMap(instant, tObject, feature).getValue();
-		if (!feature.isMany()) {
-			return value != null && !(value instanceof Empty);
+		if (value instanceof Empty) {
+			return false;
+		} else if (!feature.isMany()) {
+			return value != null;
 		} else {
 			return value != null && ((Object[]) value).length > 0;
 		}
@@ -288,7 +298,11 @@ public class MVStoreTStoreImpl implements SearcheableTStore {
 		Object oldId = array[index];
 		array = ArrayUtils.remove(array, index);
 		dataMap.put(DataKey.from(object.tId(), eReference.getName(), now()), array);
-		return getEObject((String) oldId);
+		TObject removedEObject = (TObject) getEObject((String) oldId);
+		if (object.equals(removedEObject.eContainer())) { 
+			updateContainment(null, eReference, removedEObject);
+		}
+		return removedEObject;
 
 	}
 
@@ -460,8 +474,9 @@ public class MVStoreTStoreImpl implements SearcheableTStore {
 	@Override
 	public InternalEObject getContainerAt(Instant instant, InternalEObject object) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		ContainerInfo lower = containersMap.get(containersMap.ceilingKey(ContainerKey.from(tObject.tId(), instant)));
-		if (lower != null) {
+		ContainerKey key = containersMap.floorKey(ContainerKey.from(tObject.tId(), instant));
+		ContainerInfo lower = containersMap.get(key);
+		if (StringUtils.equals(key.id, tObject.tId())) {
 			return (InternalEObject) getEObject(lower.containerId);
 		}
 		return null;
@@ -475,7 +490,7 @@ public class MVStoreTStoreImpl implements SearcheableTStore {
 	@Override
 	public EStructuralFeature getContainingFeatureAt(Instant instant, InternalEObject object) {
 		TObject tObject = TObjectAdapterFactoryImpl.getAdapter(object, TObject.class);
-		ContainerInfo lower = containersMap.get(containersMap.ceilingKey(ContainerKey.from(tObject.tId(), instant)));
+		ContainerInfo lower = containersMap.get(containersMap.floorKey(ContainerKey.from(tObject.tId(), instant)));
 		if (lower != null) {
 			EObject container = getEObject(lower.containerId);
 			container.eClass().getEStructuralFeature(lower.containingFeatureName);
@@ -509,8 +524,13 @@ public class MVStoreTStoreImpl implements SearcheableTStore {
 
 	protected void updateContainment(TObject object, EReference eReference, TObject referencedObject) {
 		if (eReference.isContainment()) {
-			ContainerInfo lower = containersMap.get(containersMap.ceilingKey(ContainerKey.from(referencedObject.tId(), now())));
-			if (lower == null || !StringUtils.equals(lower.containerId, object.tId())) {
+			if (object == null) {
+				containersMap.put(ContainerKey.from(referencedObject.tId(), now()), ContainerInfo.empty());
+				return;
+			}
+			ContainerKey floorKey = containersMap.floorKey(ContainerKey.from(referencedObject.tId(), now()));
+			ContainerInfo lower = containersMap.get(floorKey);
+			if (floorKey == null || !StringUtils.equals(referencedObject.tId(), floorKey.id) || !StringUtils.equals(object.tId(), lower.containerId)) {
 				containersMap.put(ContainerKey.from(referencedObject.tId(), now()), ContainerInfo.from(object.tId(), eReference.getName()));
 			}
 		}
@@ -652,7 +672,7 @@ public class MVStoreTStoreImpl implements SearcheableTStore {
 		}
 	}
 
-	private static class ContainerKey implements Serializable {
+	private static class ContainerKey implements Serializable, Comparable<ContainerKey> {
 
 		private static final long serialVersionUID = 1L;
 
@@ -666,6 +686,16 @@ public class MVStoreTStoreImpl implements SearcheableTStore {
 
 		public static ContainerKey from(String id, Instant instant) {
 			return new ContainerKey(id, instant);
+		}
+		
+		@Override
+		public int compareTo(ContainerKey o) {
+			int result;
+			result = id.compareTo(o.id);
+			if (result != 0) {
+				return result;
+			}
+			return instant.compareTo(o.instant);
 		}
 
 		@Override
@@ -714,6 +744,10 @@ public class MVStoreTStoreImpl implements SearcheableTStore {
 			this.containingFeatureName = containingFeatureName;
 		}
 
+		public static ContainerInfo empty() {
+			return new ContainerInfo(null, null);
+		}
+		
 		public static ContainerInfo from(String containerId, String containingFeatureName) {
 			return new ContainerInfo(containerId, containingFeatureName);
 		}
@@ -736,11 +770,20 @@ public class MVStoreTStoreImpl implements SearcheableTStore {
 			return new EClassInfo(nsURI, className);
 		}
 	}
-	
+
+	/**
+	 * Utility class used to indicate an empty value for a given
+	 * {@link EStructuralFeature}. This is because {@link MVMap}s do not support
+	 * <code>null</code> values, and as such we need a specific serializable class
+	 * to indicate this situation.
+	 * 
+	 * @author agomez
+	 *
+	 */
 	private static class Empty implements Serializable {
-		
+
 		private static final long serialVersionUID = 1L;
-		
+
 		public static final Empty INSTANCE = new Empty();
 	}
 }
