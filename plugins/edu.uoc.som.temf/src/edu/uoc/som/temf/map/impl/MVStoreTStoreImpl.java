@@ -36,6 +36,7 @@ import org.h2.mvstore.MVStore;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableSortedMap;
 
 import edu.uoc.som.temf.Logger;
 import edu.uoc.som.temf.core.InternalTObject;
@@ -163,7 +164,7 @@ public class MVStoreTStoreImpl implements SearcheableTStore {
 		} else {
 			all.forEach((key, obj) -> result.put(key, getEObject((String) ((Object[]) obj)[index])));
 		}
-		return result;
+		return ImmutableSortedMap.copyOf(result);
 	}
 
 	@Override
